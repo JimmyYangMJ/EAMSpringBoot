@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>02-jQuery-动态创建表格案例</title>
+    <link href="assets/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.bootcss.com/jquery/1.10.2/jquery.min.js"></script>
+    <script src="assets/js/bootstrap.min.js" type="text/javascript"></script>
+
+
+    <script>
+        //将集合中的数据保留两位小数
+        //生成图标的方法
+        function generateChart(data) {
+            var course = data;
+            var status = course.status;
+            alert(status);
+            if(status == 1){  //  没有相应记录
+                alert("没有相应记录")
+            }
+            var node = course.data;
+            var nodeId = new Array();
+            var nodeTime = new Array();
+            var nodeHumidity = new Array();
+            for (var i = 0; i < node.length; i++) {
+                nodeId[i] = node[i].node
+                nodeTime[i] = node[i].times;
+                nodeHumidity[i] = node[i].humidity;
+            }
+            //基于准备好的DOM，初始化echarts实例
+            alert("结果:" + data.msg);
+
+            $(function(){
+                //第一种：动态创建表格的方式，使用拼接html的方式 （推荐）
+                var html = "";
+                for( var i = 0; i < node.length; i++ ) {
+                    // alert("node:" + nodeId[i])
+                    html += "<tr>";
+                    html +=     "<td>" + nodeId[i] + "</td>"
+                    html +=     "<td>" + nodeHumidity[i] + "</td>"
+                    html +=     "<td>" + nodeTime[i] + "</td>"
+                    html += "</tr>";
+                }
+                $("#J_TbData").html(html);
+
+                //第二种： 动态创建表格的方式，使用动态创建dom对象的方式
+                //清空所有的子节点
+                //$("#J_TbData").empty();
+                //自杀
+                // $("#J_TbData").remove();
+                // alert("123")
+                // for( var i = 0; i < node.length; i++ ) {
+                //     //动态创建一个tr行标签,并且转换成jQuery对象
+                //     var $trTemp = $("<tr></tr>");
+                //     alert("node:" + nodeId[i])
+                //     //往行里面追加 td单元格
+                //     $trTemp.append("<td>"+ nodeId[i] +"</td>");
+                //     $trTemp.append("<td>"+ nodeHumidity[i] +"</td>");
+                //     $trTemp.append("<td>"+ nodeTime[i] +"</td>");
+                //     // $("#J_TbData").append($trTemp);
+                //     $trTemp.appendTo("#J_TbData");
+                // }
+
+            });
+        }
+
+        //buttion调用的方法
+        function getData() {
+            var node = $('#node').val();
+            var day = $('#day').val();
+            alert("结点："+node + " 时间：" + day);
+            //异步请求
+            $.get(  // jQuerypost () 方法
+                "soil/selectSoilSet.do", //访问地址
+                {node: node, day: day}, //携带的参数
+                function (data) {
+                    generateChart(data);
+                },
+                "json"
+            );
+        }
+    </script>
+
+</head>
+<body>
+    <form class="form-horizontal" role="form">
+        <div class="form-group">
+            <label for="node" class="col-sm-2 control-label">结点</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="node" placeholder="例如：1">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="day" class="col-sm-2 control-label">时间</label>
+            <div class="col-sm-10">
+                <input type="text" class="form-control" id="day" placeholder="例如：2019-09-22">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" class="btn btn-simple" onclick="getData()">查询</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-bordered" style="min-height:50px;">
+            <caption>水势数据as</caption>
+            <thead>
+            <tr>
+                <th>node</th>
+                <th>humidity</th>
+                <th>times</th>
+            </tr>
+            </thead>
+            <tbody id="J_TbData"></tbody>
+        </table>
+    </div>
+
+
+</body>
+</html>

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<!-- import CSS -->
+<!--		<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">-->
+		<link rel="stylesheet" href="/static/css/index.css">
+		<!--<script src="https://cdn.staticfile.org/axios/0.18.0/axios.min.js"></script>-->
+	</head>
+
+	<body>
+		<div id="app">
+			<el-container style="height: 800px; border: 1px solid #eee">
+				<el-aside width="200px" style="background-color: rgb(238, 241, 246)">
+					<el-menu :default-openeds="['1']">
+						<el-submenu index="1">
+							<template slot="title"><i class="el-icon-message"></i>导航一</template>
+							<el-menu-item-group>
+								<template slot="title">分组一</template>
+								<el-menu-item index="1-1">选项1</el-menu-item>
+								<el-menu-item index="1-2">选项2</el-menu-item>
+							</el-menu-item-group>
+							<el-menu-item-group title="分组2">
+								<el-menu-item index="1-3">选项3</el-menu-item>
+							</el-menu-item-group>
+							<el-submenu index="1-4">
+								<template slot="title">选项4</template>
+								<el-menu-item index="1-4-1">选项4-1</el-menu-item>
+							</el-submenu>
+						</el-submenu>
+						<el-submenu index="2">
+							<template slot="title"><i class="el-icon-menu"></i>导航二</template>
+							<el-menu-item-group>
+								<template slot="title">分组一</template>
+								<el-menu-item index="2-1">选项1</el-menu-item>
+								<el-menu-item index="2-2">选项2</el-menu-item>
+							</el-menu-item-group>
+							<el-menu-item-group title="分组2">
+								<el-menu-item index="2-3">选项3</el-menu-item>
+							</el-menu-item-group>
+							<el-submenu index="2-4">
+								<template slot="title">选项4</template>
+								<el-menu-item index="2-4-1">选项4-1</el-menu-item>
+							</el-submenu>
+						</el-submenu>
+					</el-menu>
+				</el-aside>
+
+				<el-container>
+					<el-header style="text-align: right; font-size: 12px">
+						<span>Jimmy</span>
+					</el-header>
+
+					<el-main>
+
+						<!-- Form -->
+						<el-button type="primary" size="small" @click="dialogFormVisible = true">资产导入</el-button>
+								<template>
+						<el-dialog title="收货地址" :visible.sync="dialogFormVisible">
+							<h1> 资产新建</h1>
+							<el-form :model="form">
+								<el-form-item label="选择部门分类" :label-width="formLabelWidth">
+									<el-select v-model="form.region" placeholder="请选择活动区域">
+										<el-option label="维修中心" value="维修中心"></el-option>
+										<el-option label="区域二" value="beijing"></el-option>
+									</el-select>
+								</el-form-item>
+								<el-form-item label="资产名称" :label-width="formLabelWidth">
+									<el-input v-model="form.name" autocomplete="off"></el-input>
+								</el-form-item>
+								<el-upload class="upload-demo" action="" :http-request="uploadSectionFile" multiple>
+									<el-button size="small" type="primary">点击上传</el-button>
+									<!--<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>-->
+									<div class="el-upload__tip" slot="tip">只能上传excel文件 {{"| 状态： " + message}}</div>
+								</el-upload>
+							</el-form>
+							<div slot="footer" class="dialog-footer">
+								<el-button @click="dialogFormVisible = false">取 消</el-button>
+								<el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
+							</div>
+						</el-dialog>
+								</template>
+						<!-- Form end -->
+						<div id="appcenter">
+							<!--查询-->
+							<el-form :inline="true" :model="formInline" class="demo-form-inline">
+								<el-form-item label="资产类型">
+									<el-select v-model="formInline.table" placeholder="资产表">
+										<el-option label="647台阿里索电维修test" value="647台阿里索电维修test"></el-option>
+										<el-option label="647台阿里索电维修" value="647台阿里索电维修"></el-option>
+									</el-select>
+								</el-form-item>
+								<el-form-item>
+									<el-button type="primary" @click="onSubmit">查询</el-button>
+								</el-form-item>
+							</el-form>
+
+							<div class="boxShadow">
+
+								<div style="margin-top: 20px">
+									<button @click="exportExcel">导出数据</button>
+									<el-table id='tableExcel' :data="tables" ref="multipleTable" style="width: 100%" @selection-change='selectArInfo'>
+										<el-table-column type="selection" width="45px"></el-table-column>
+										<el-table-column fixed label="序号" width="62px" type="index"></el-table-column>
+											<template v-for='(col) in tableData'>
+												<el-table-column sortable :show-overflow-tooltip="true" :prop="col.dataItem" :label="col.dataName" :key="col.dataItem" width="124px">
+												</el-table-column>
+											</template>
+										<el-table-column fixed="right" label="操作" width="100">
+											<template slot-scope="scope">
+												<el-button @click="handleClickUpdate(scope.row)" type="text" size="small">处理</el-button>
+												<el-button type="text" size="small">详情</el-button>
+											</template>
+										</el-table-column>
+										<!--隐藏资产id-->
+										<el-table-column fixed label="id" width="62px" type="index" v-if=false></el-table-column>
+									</el-table>
+
+									<el-dialog title="资产更新"  :visible.sync="dialogUpdateVisible">
+										<h1>更新资产数据</h1>
+										<h1>当前阶段：{{assetUpdate.currentStage}}</h1>
+										<el-form :model="assetUpdate">
+											<template v-for='(v, k, item) in assetUpdate.form'  class="demo">
+												<el-form-item  :label= v :label-width="formLabelWidth">
+													<el-input  type="text" v-model="forms[k]"></el-input>
+												</el-form-item>
+											</template>
+											<el-form-item label="下一阶段" :label-width="formLabelWidth">
+												<el-select  v-model="formValues[item]" placeholder="请选择流程阶段">
+													<el-option label="接收报修信息" value="shanghai"></el-option>
+													<el-option label="区域二" value="beijing"></el-option>
+												</el-select>
+											</el-form-item>
+										</el-form>
+										<div slot="footer" class="dialog-footer">
+											<el-button @click="dialogUpdateVisible = false">取 消</el-button>
+											<el-button type="primary" @click="updateAssetDate()">提 交</el-button>
+										</div>
+									</el-dialog>
+								</div>
+							</div>
+						</div>
+					</el-main>
+				</el-container>
+			</el-container>
+		</div>
+
+	</body>
+	<style>
+		.el-header {
+			background-color: #B3C0D1;
+			color: #333;
+			line-height: 60px;
+		}
+		
+		.el-aside {
+			color: #333;
+		}
+	</style>
+	<script type="text/javascript" src="/static/js/vue.js"></script>
+	<script type="text/javascript" src="/static/js/axios.js"></script>
+	<script type="text/javascript" src="/static/js/index.js"></script>
+	<!-- import JavaScript -->
+<!--	<script src="https://unpkg.com/element-ui/lib/index.js"></script>-->
+<!--	<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.16.8/xlsx.js"></script>-->
+<!--	<script type="text/javascript" src="js/xlsx.js"></script>-->
+	<script type="text/javascript" src="/static/js/FileSaver.js"></script>
+	<script type="text/javascript" src="/static/js/xlsx.core.min.js"></script>
+	<script>
+		//		var obj = JSON.parse('');
+		function columnList(obj) { // 获取 列 名 {dataItem: "zhongwen", dataName: "中文"} ;
+
+			var set = new Set();
+			for(var item in obj) {
+				var arr = Object.keys(obj[item].data);
+				for(var i in arr) {
+					console.log();
+					set.add(arr[i])
+				}
+			}
+			var array = Array.from(set);
+
+			var arrayObj = [];
+			for(var i in array) {
+				var column = {
+					dataItem: "",
+					dataName: ""
+				};
+				column.dataItem = array[i];
+				column.dataName = array[i];
+				arrayObj.push(column);
+
+			}
+			return arrayObj
+		}
+
+		function dataList(obj) {
+
+			var arrayObj = [];
+			for(var item in obj) {
+				obj[item].data._id = obj[item]._id;
+				arrayObj.push(obj[item].data);
+			}
+
+			return arrayObj;
+		}
+		//		var url = "http://localhost:8081/table/query.do?collectionName=asset_647%E5%8F%B0%E9%98%BF%E9%87%8C%E7%B4%A2%E7%94%B5%E7%BB%B4%E4%BF%AEtest";
+		var url = "http://localhost:8081/table/query.do";
+
+		var vm = new Vue({
+			el: "#app",
+			data: {
+				tables: [],
+				tableData: [],
+				message: "未上传",
+				formInline: {
+					user: '',
+					table: ''
+				},
+				form:{},
+				dialogFormVisible: false,
+				dialogUpdateVisible: false,
+				assetUpdate: {
+					id: {},
+					data: [],
+					form: {},
+					currentStage: '接收报修信息',
+					nextStage: ''
+				},
+				formValues: [],
+				forms:{},
+				formKeys:[],
+				formLabelWidth: '200px'
+
+			},
+			methods: {
+				// 处理——新增某资产数据
+				handleClickUpdate: function(test) {
+					var that = this;
+					console.log(test);
+					Vue.set(this,'dialogUpdateVisible', true);
+					vm.$data.assetUpdate.id =  test._id;
+					console.log(test._id['$oid']);
+					vm.$data.forms["assertId"] = test._id['$oid'];
+					vm.$data.forms["assertSetName"] ='647台阿里索电维修test';
+					var url = "http://192.168.14.253:8081/flow/getStageForm.do";
+					axios.get(url, {
+						params: {
+							stage: that.assetUpdate.currentStage,
+							flow: "索电阿里报修流程"
+						}
+					}).then(function(response) {
+						var data = response.data;
+						var form = data.form;
+						var formArray = [];
+						var array = [];
+						for(var key in form){ //遍历json对象的每个key/value对,p为key
+							formArray.push(form[key]);
+							array.push(key);
+						}
+						vm.$data.formKeys = array;
+						vm.$data.assetUpdate.form = data.form; // 中文名称
+						vm.$data.assetUpdate.nextStage = data.nextStage;
+					}).catch(function(error) {
+						console.log(error);
+					});
+					var r = "region";
+					console.log(this.form[r]);
+					console.log("asdasdasdasdasdasdsd");
+
+					console.log(this.assetUpdate.data);
+				},
+				// 提交
+				updateAssetDate: function(){
+					this.dialogUpdateVisible = false;
+					var form = vm.$data.forms;
+					// var formData = vm.$data.assetUpdate.data;
+					// todo 上传数据
+					// var form = new FormData();
+					// form.append("file", fileObj);
+					// form.
+					// 发送 POST 请求
+// 发送 POST 请求
+					var url = "http://192.168.14.253:8081/table/addAssertInfo.do";
+					axios.get(url, {
+						params: form
+					}).then(function(response) {
+
+					}).catch(function(error) {
+						console.log(error);
+					});
+					console.log(this.forms);
+					vm.$data.forms = {}; //  清空数据
+
+				},
+				exportExcel: function(excelName){
+
+					var fix = document.querySelector('.el-table__fixed');
+					console.log("fix");
+					if (fix) {
+						wb = XLSX.utils.table_to_book(document.querySelector('#tableExcel').removeChild(fix));
+						document.querySelector('#tableExcel').appendChild(fix);
+					} else {
+						var wb = XLSX.utils.table_to_book(document.querySelector('#tableExcel'), {raw: true});   // 这里就是表格
+
+					}
+					var wbout = XLSX.write(wb, { bookType: 'xlsx', bookSST: true, type: 'array' });
+					try {
+						console.log(wb);
+						console.log("666");
+						console.log(wbout);
+						saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'tableExcel.xlsx');  //table是自己导出文件时的命名，随意
+					} catch (e){
+						if (typeof console !== 'undefined')
+							console.log(e, wbout)
+					}
+					return wbout
+				},
+				// 获取表格选中时的数据
+				selectArInfo: function(val) {
+					var that = this;
+					that.selectArr = val;
+					console.log(that.selectArr);
+				},
+				onSubmit: function() {
+					var that = this;
+					// console.log(that.formInline.table);
+					var table = "asset_" + that.formInline.table;
+
+					axios.get(url, {
+							params: {
+								collectionName: table
+							}
+						})
+						.then(function(response) {
+							console.log(response);
+							var data = response.data;
+							// 列名							
+							const arrayObj = columnList(data);
+
+							console.log(arrayObj);
+							Vue.set(that, 'tableData', arrayObj);
+							Vue.set(that, 'tables', dataList(data))
+						})
+						.catch(function(error) {
+							console.log(error);
+						});
+				},
+				uploadSectionFile: function(param) {
+					var fileObj = param.file;
+					// FormData 对象
+					var form = new FormData();
+					var that = this;
+					// 文件对象
+					form.append("file", fileObj);
+					form.append("assetSetName", "647台阿里索电维修test");
+					form.append("department", "维修中心");
+					axios({
+						method: 'post',
+						url: 'http://192.168.14.253:8081/table/uploadAssetData.do',
+						headers: {
+							'Content-Type': 'multipart/form-data'
+						},
+						data: form
+					}).then(res => {
+						if(res.data == "资产数据表已存在") {
+							Vue.set(that, 'message', res.data);
+						} else {
+							Vue.set(that, 'message', "上传成功");
+						}
+						if(res.data.msgCode == '1') {
+							this.$message({
+								type: 'success',
+								message: res.data.msgDesc
+							})
+
+						} else {
+							this.$message({
+								type: 'error',
+								message: res.data.msgDesc
+							})
+						}
+
+					})
+
+				}.bind(this)
+			}
+		})
+	</script>
+
+
+
+</html>

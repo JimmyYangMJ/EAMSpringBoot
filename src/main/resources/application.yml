@@ -1,0 +1,19 @@
+# 应用名称
+spring:
+  application:
+    name: eam
+  resources:
+    static-locations: classpath:/templates/
+  data:
+    mongodb:
+      database: test
+      host: localhost
+      port: 27017
+      testMongoTemplate:
+        showClass: false
+
+# 应用服务 WEB 访问端口
+server:
+  port: 8081
+  resources:
+    static-locations: classpath:/templates/
