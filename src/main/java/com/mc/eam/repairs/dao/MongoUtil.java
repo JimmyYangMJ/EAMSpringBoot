@@ -1,5 +1,9 @@
 package com.mc.eam.repairs.dao;
 
+import com.alibaba.fastjson.JSONArray;
+
+import java.util.List;
+
 /**
  * @author ymj
  * @Date： 2021/2/5 15:37
@@ -7,4 +11,13 @@ package com.mc.eam.repairs.dao;
  */
 public interface MongoUtil {
     // 查询某表所有 document
+    JSONArray queryDocuments(String collectionName);
+    // 查询数据表collection 某名称列表
+
+    /**
+     * 查询所有流程 列表
+     * @return 流程列表名
+     */
+    List<String> findNameList(String collectionName, String keyName);
+
 }

@@ -19,6 +19,6 @@ public interface FlowBiz {
     ServerResponse<String> insertFlow(String document);
 
     // todo 查询流程列表
-    ServerResponse<List<FlowInfoBO>> queryFlowList(String document);
+    ServerResponse<List<String>> queryFlowNameList();
 
 }

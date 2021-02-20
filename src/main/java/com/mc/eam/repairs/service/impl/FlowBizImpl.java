@@ -4,6 +4,7 @@ package com.mc.eam.repairs.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.MongoFlowDao;
+import com.mc.eam.repairs.dao.MongoUtil;
 import com.mc.eam.repairs.service.BO.FlowInfoBO;
 import com.mc.eam.repairs.service.FlowBiz;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,19 +24,23 @@ public class FlowBizImpl implements FlowBiz {
     @Autowired
     private MongoFlowDao mongoFlowDao;
 
+    @Autowired
+    private MongoUtil mongoUtil;
+
     /**
      * 获取 某流程 某阶段 form 信息
      * @param stageName
      * @param flowName
      * @return
      */
+    @Override
     public String getStageInfo(String stageName, String flowName) {
         List<Map> documents = mongoFlowDao.findFlow(flowName);
+        System.out.println(documents.toString());
         Iterator<Map> iterator2 = documents.iterator();
         Map map = null;
         while (iterator2.hasNext()) {
             map = iterator2.next();
-//            json = new JSONObject(map);
         }
         JSONObject formObject = new JSONObject();
         /* 添加当前阶段的 form 信息*/
@@ -65,8 +70,9 @@ public class FlowBizImpl implements FlowBiz {
     }
 
     @Override
-    public ServerResponse<List<FlowInfoBO>> queryFlowList(String document) {
-        return null;
+    public ServerResponse<List<String>> queryFlowNameList() {
+
+        return ServerResponse.createBySuccess(mongoUtil.findNameList("flow","name"));
     }
 
 }

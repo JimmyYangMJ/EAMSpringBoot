@@ -3,21 +3,21 @@ package com.mc.eam.repairs.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.JSONObject;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.impl.MongoAssetDaoImpl;
+import com.mc.eam.repairs.dao.impl.MongoFlowDaoImpl;
 import com.mc.eam.repairs.service.AssetBiz;
 import com.mc.eam.repairs.util.FileUtil;
 import com.mc.eam.repairs.util.excel.*;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author ymj
@@ -31,7 +31,10 @@ public class AssetBizImpl implements AssetBiz {
     private ExcelListener excelListener;
 
     @Autowired
-    private MongoAssetDaoImpl mongoCRUDDao;
+    private MongoAssetDaoImpl mongoAssetDao;
+
+    @Autowired
+    private MongoFlowDaoImpl mongoFlowDao;
 
     /**
      * 保存文件
@@ -66,7 +69,7 @@ public class AssetBizImpl implements AssetBiz {
     @Override
     public boolean excelToMongo(MultipartFile mFile, String assetSetName, Map requestMap) throws Exception {
         // 更新 数据表名/document
-        mongoCRUDDao.collectionName = "asset_" + assetSetName;
+        mongoAssetDao.collectionName = "asset_" + assetSetName;
 
         File file = FileUtil.multipartFileToFile(mFile);
         EasyExcel.read(file, excelListener).sheet("Sheet1").doRead();
@@ -79,30 +82,34 @@ public class AssetBizImpl implements AssetBiz {
              default_flow： 默认流程
          */
         Document document = new Document();
-        document.put("count", mongoCRUDDao.selectDocumentCount(null, "asset_" + assetSetName));
+        document.put("count", mongoAssetDao.selectDocumentCount(null, "asset_" + assetSetName));
         Iterator<Map.Entry<String, String[]>> iter = requestMap.entrySet().iterator();
         while(iter.hasNext()) {
             Map.Entry<String, String[]> entry = iter.next();
             document.put(entry.getKey(), entry.getValue()[0]);
         }
-        mongoCRUDDao.updateAssetStatistics(document, assetSetName, null);
+        mongoAssetDao.updateAssetStatistics(document, assetSetName, null);
         return true;
     }
 
     /**
-     * 分页查询
+     * 资产数据 分页查询
      * @param collectionName
      * @param pageSize
      * @param page
      * @return
      */
     @Override
-    public ServerResponse<JSONObject> queryAssetPerPages(String collectionName, Integer pageSize, Integer page)  {
-        JSONArray dataList = mongoCRUDDao.queryPerPages(collectionName, pageSize, page);
-        long dataSum = mongoCRUDDao.selectDocumentCount(null, collectionName);
-        if(dataSum == 0 ){
-            return ServerResponse.createByErrorMessage("没有相应记录");
-        }
+    public ServerResponse<JSONObject> queryAssetPerPages(String collectionName, Integer pageSize, Integer page, Map queryMap)  {
+        JSONArray dataList ;
+        long dataSum = 0;
+
+        dataList = mongoAssetDao.queryPerPages(collectionName, pageSize, page, queryMap);
+        dataSum = mongoAssetDao.selectDocumentCount(queryMap, collectionName);
+
+//        if(dataSum == 0 ){
+//            return ServerResponse.createByErrorMessage("没有相应记录");
+//        }
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("sum", dataSum);
         jsonObject.put("dataList", dataList);
@@ -111,5 +118,53 @@ public class AssetBizImpl implements AssetBiz {
         return  ServerResponse.createBySuccess("查询成功", jsonObject);
     }
 
+    @Override
+    public ServerResponse<Arrays> allAssetNameList() {
+        return null;
+    }
 
+    /**
+     * 查询 某 资产表是否存在
+     * @param assetSetName
+     * @return
+     */
+    @Override
+    public boolean containAssetName(String assetSetName){
+        return  mongoAssetDao.selectContainCollection("asset").contains(assetSetName);
+    }
+
+    @Override
+    public String insertAssetData(Map httpDateMap, String assertId, String assertSetName) {
+        Map<String, String> dataMap = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, String[]>> iter = httpDateMap.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry<String, String[]> entry = iter.next();
+            // 获取key
+            String key = entry.getKey();
+            // 获取value
+            String value = entry.getValue()[0];
+            dataMap.put(key, value);
+        }
+        return  mongoAssetDao.updateAssetData(dataMap, assertId, "asset_" + assertSetName, "data");
+    }
+
+
+    @Override
+    public String AssetFlowStart(String assetSetName, String flowName) {
+        //  查询 流程信息
+        List<Map> documents = mongoFlowDao.findFlow(flowName);
+        if (documents.size() != 1) {
+            System.out.println("查询流程出错： " + documents.size());
+            return "error";
+        }
+        List<Map> stages = (List<Map>) documents.get(0).get("stage");
+        System.out.println(stages);
+        Map<String, String> dateMap = new LinkedHashMap(7);
+        dateMap.put("flow", flowName);
+        dateMap.put("currentStage",stages.get(1).get("flowStepName").toString() );
+        dateMap.put("nextStage", stages.get(2).get("flowStepName").toString());
+        dateMap.put("pendingStaff",stages.get(1).get("handler_id").toString() );
+        return  mongoAssetDao.updateAssetData(dateMap, null , "asset_" +assetSetName, "currentFlowStatus");
+
+    }
 }

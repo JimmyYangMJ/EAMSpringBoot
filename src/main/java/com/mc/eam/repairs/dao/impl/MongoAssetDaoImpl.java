@@ -42,6 +42,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @return
      * @throws IllegalAccessException
      */
+    @Override
     public <T> boolean insert(Object objectBean, String objKey) throws IllegalAccessException {
 
         // create codec registry for POJOs
@@ -69,24 +70,28 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
     /**
      *  指定资产 插入 data 数据 (key 相同时 更新  value)
      * @param map data 数据参数
-     * @param id  资产 id
+     * @param id  资产 id, 如果为 Null 则  插入所有
      * @param collectionName  集合名称（数据表）
+     * @param jsonKey kv,其中 v 为 json ，要插入的 数据参数
      * @return
      */
-    public String updateAssetData(Map map, String id, String collectionName) {
+    @Override
+    public String updateAssetData(Map map, String id, String collectionName, String jsonKey) {
         Query query = new Query();
-        query.addCriteria(Criteria.where("_id").is(id));
+        if(id != null) {
+            query.addCriteria(Criteria.where("_id").is(id));
+        }
         Update update = new Update();
-        Iterator<Map.Entry<String, String[]>> iter = map.entrySet().iterator();
+        Iterator<Map.Entry<String, String>> iter = map.entrySet().iterator();
         while(iter.hasNext()) {
-            Map.Entry<String, String[]> entry = iter.next();
+            Map.Entry<String, String> entry = iter.next();
             // 获取key
-            String key = "data." + entry.getKey();
+            String key = jsonKey + "." + entry.getKey();
             // 获取value
-            String value = entry.getValue()[0];
+            String value = entry.getValue();
             update.set(key, value);
         }
-        UpdateResult updateResult = mongoTemplate.updateFirst(query, update, collectionName);
+        UpdateResult updateResult = mongoTemplate.updateMulti(query, update, collectionName);
         return updateResult.toString();
     }
 
@@ -96,6 +101,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @param type 类型 assert：资产
      * @return
      */
+    @Override
     public Set selectContainCollection(String type) {
         Set<String> CollectionList = mongoTemplate.getCollectionNames();
         Set<String> result = new HashSet<>();
@@ -108,6 +114,23 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
         return result;
     }
 
+    @Override
+    public List<String> selectAssetSetNameList() {
+        MongoCollection<Document> collection  = mongoTemplate.getCollection("asset_statistics");
+        FindIterable<Document> documents = collection.find()
+                .projection(
+                        new Document("assetSetName", 1).append("_id", 0)
+                );
+        List<String> arrayList = new ArrayList<>();
+        Iterator<Document> iterator = documents.iterator();
+
+        while (iterator.hasNext()) {
+            Document document = iterator.next();
+            arrayList.add(document.getString("assetSetName"));
+        }
+        return arrayList;
+    }
+
     /**
      * 更新资产统计表 asset_statistics
      * @param parameter 更新参数
@@ -115,6 +138,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @param id 资产id
      * @return
      */
+    @Override
     public String updateAssetStatistics(Document parameter , String assetName, String id) {
         MongoCollection mongoCollection = mongoTemplate.getCollection("asset_statistics");
         Document documentFilter = new Document();
@@ -139,25 +163,15 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @param collectionName 数据表名称
      * @return document count
      */
+    @Override
     public long selectDocumentCount(Map parameterMap, String collectionName) {
         if (parameterMap == null || parameterMap.size() == 0) {
-            return mongoTemplate.
-                    getCollection(collectionName)
-                    .countDocuments();
+            return mongoTemplate.getCollection(collectionName).countDocuments();
         }
+        Document queryDocument = new Document();
+        queryDocument.putAll(parameterMap);
+        return mongoTemplate.getCollection(collectionName).countDocuments(queryDocument);
 
-        Iterator<Map.Entry<String, String>> iter = parameterMap.entrySet().iterator();
-        Query query = new Query();
-        while(iter.hasNext()) {
-            Map.Entry<String, String> entry = iter.next();
-            // 获取key
-            String key = entry.getKey();
-            // 获取value
-            Object value = entry.getValue();
-            query.addCriteria(Criteria.where(key).is(value));
-        }
-        return mongoTemplate.getCollection(collectionName)
-                .countDocuments();
     }
 
     /**
@@ -165,6 +179,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @param collectionName
      * @return
      */
+    @Override
     public String queryAll(String collectionName) {
 
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
@@ -192,9 +207,13 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @return
      */
     @Override
-    public JSONArray queryPerPages(String collectionName, Integer pageSize, Integer page) {
+    public JSONArray queryPerPages(String collectionName, Integer pageSize, Integer page, Map queryMap) {
+        Document queryDocument = new Document();
+        if (queryMap != null){
+            queryDocument.putAll(queryMap);
+        }
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
-        FindIterable<Document> documents = collection.find().skip((page-1)*pageSize).limit(pageSize);
+        FindIterable<Document> documents = collection.find(queryDocument).skip((page-1)*pageSize).limit(pageSize);
         JSONArray jsonArray = new JSONArray();
         Iterator<Document> iterator = documents.iterator();
         /**

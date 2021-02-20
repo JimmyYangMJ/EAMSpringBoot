@@ -3,6 +3,8 @@ package com.mc.eam.repairs.dao;
 import com.alibaba.fastjson.JSONArray;
 import org.bson.Document;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -31,13 +33,19 @@ public interface MongoAssetDao {
     Set selectContainCollection(String type);
 
     /**
+     *  查看当前所有资产数据集合 list
+     * @return
+     */
+    List<String> selectAssetSetNameList();
+
+    /**
      *  指定资产 插入 data 数据 (key 相同时 更新  value)
      * @param map data 数据参数
      * @param id  资产 id
      * @param collectionName  集合名称（数据表）
      * @return
      */
-    String updateAssetData(Map map, String id, String collectionName);
+    String updateAssetData(Map map, String id, String collectionName, String jsonKey);
 
     /**
      * 更新资产统计表
@@ -63,9 +71,9 @@ public interface MongoAssetDao {
     String queryAll(String collectionName);
 
     /**
-     * todo 分页查询
+     * todo 分页查询资产数据
      * 根据表明
      */
-    JSONArray queryPerPages(String collectionName, Integer pageSize, Integer page);
+    JSONArray queryPerPages(String collectionName, Integer pageSize, Integer page, Map queryMap);
 
 }
