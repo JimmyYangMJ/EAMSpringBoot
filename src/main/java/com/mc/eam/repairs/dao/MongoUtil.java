@@ -1,8 +1,11 @@
 package com.mc.eam.repairs.dao;
 
 import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import org.bson.Document;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author ymj
@@ -19,5 +22,7 @@ public interface MongoUtil {
      * @return 流程列表名
      */
     List<String> findNameList(String collectionName, String keyName);
+
+    JSONObject findValue(String keyName,  String queryKey, String queryValue, String collectionName);
 
 }

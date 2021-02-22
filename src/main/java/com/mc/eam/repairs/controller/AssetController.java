@@ -1,17 +1,17 @@
 package com.mc.eam.repairs.controller;
 
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.MongoAssetDao;
+import com.mc.eam.repairs.dao.impl.MongoUtilImpl;
 import com.mc.eam.repairs.service.impl.AssetBizImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author ymj
@@ -137,7 +137,48 @@ public class AssetController {
         return assetBiz.queryAssetPerPages("asset_" + assetSetName, pageSize, page, map);
     }
 
-    // todo
+
+    @Autowired
+    private MongoUtilImpl mongoUtil;
+    /**
+     *  测试用, 直接访问 dao 层
+     */
+    // todo 查询某资产 当前 资产阶段（所属流程 当前阶段。 ）
+    // 根据当前阶段 查询  需要 增加的 资产表单数据 todo 填写资产数据
+    // 更新当前阶段信息
+    @GetMapping(value = "assetItem.do")
+    public ServerResponse<JSONObject> assetItem(String assetSetName, String assetId) {
+        return ServerResponse.createBySuccess(
+                mongoUtil.findValue("currentFlowStatus", "_id", assetId, "asset_" + assetSetName));
+    }
+
+    // todo 查询 需要填写 的表项
+    /**
+     * 查询 某阶段需要增添的资产数据信息
+     * @param stageName 阶段名
+     * @param flowName 流程名
+     * @return 当前data, 下一阶段 名称 todo 格式
+     */
+    @GetMapping(value = "getStageForm.do")
+    public ServerResponse<JSONObject> getStageInfo(@RequestParam("stage") String stageName,
+                               @RequestParam("flow") String flowName ) {
+
+        JSONObject jsonObject = mongoUtil.findValue("stage", "stage.flowStepName", stageName, "flow");
+        JSONArray jsonArray = jsonObject.getJSONArray("stage");
+        for (Object j: jsonArray) {
+            JSONObject jo = (JSONObject) j;
+            System.out.println(jo.toJSONString());
+
+            if (jo.containsKey("flowStepName") && jo.getString("flowStepName").equals(stageName)) {
+                return ServerResponse.createBySuccess( jo );
+            }
+        }
+
+        return ServerResponse.createByError();
+
+
+
+    }
 
     // todo 删除资产表
 
