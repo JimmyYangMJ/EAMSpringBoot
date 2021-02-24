@@ -5,6 +5,7 @@ import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.MongoFlowDao;
 import com.mc.eam.repairs.dao.impl.MongoAssetDaoImpl;
 import com.mc.eam.repairs.service.FlowBiz;
+import io.swagger.annotations.Api;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -24,6 +25,7 @@ import java.util.Map;
  * @Date： 2021/1/29 14:13
  * @description: 流程操作
  */
+@Api(tags = "流程操作")
 @RestController
 @RequestMapping("flow")
 public class FlowController {

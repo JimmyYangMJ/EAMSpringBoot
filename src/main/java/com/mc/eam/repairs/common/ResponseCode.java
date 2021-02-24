@@ -7,7 +7,8 @@ package com.mc.eam.repairs.common;
 public enum ResponseCode {
 
     SUCCESS(0,"SUCCESS"),
-    ERROR(1,"ERROR");
+    ERROR(1,"ERROR"),
+    NULL(2,"NULL");
 
     private final int code;
     private final String desc;

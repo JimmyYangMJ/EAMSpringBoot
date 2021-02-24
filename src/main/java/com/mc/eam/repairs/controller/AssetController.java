@@ -4,8 +4,10 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.MongoAssetDao;
-import com.mc.eam.repairs.dao.impl.MongoUtilImpl;
+import com.mc.eam.repairs.dao.impl.MongoUtilDaoImpl;
 import com.mc.eam.repairs.service.impl.AssetBizImpl;
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,7 @@ import java.util.*;
  * @Date： 2021/1/25 16:53
  * @description: 填表,CRUD
  */
+@Api(tags = "资产操作")
 @RestController
 @RequestMapping("asset")
 public class AssetController {
@@ -27,9 +30,17 @@ public class AssetController {
     @Autowired
     private MongoAssetDao mongoAssetDao;
 
+    @ApiOperation(value = "测试用", notes = "这是测试用的")
     @GetMapping("test.do")
-    public ServerResponse<List> test(){
-        return ServerResponse.createBySuccess(mongoUtil.findNameList("flow","stage.flowStepName","603083832f6b34553c9dded4"));
+    public ServerResponse<List> test(String key){
+        if (key == null) {
+            return ServerResponse.createBySuccess(mongoUtil.findUniqueIndex("flow",null));
+        }else {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put("name",key);
+            return ServerResponse.createBySuccess(mongoUtil.findUniqueIndex("flow", hashMap));
+        }
+
     }
     /**
      * 上传原始资产数据（创建 新数据库表：asset_，asset_statistics）
@@ -38,7 +49,7 @@ public class AssetController {
      * @param requestParameter 请求体
      * @return 结果
      */
-    @PostMapping("uploadAssetData.do")
+    @PostMapping("setExcel.do")
     public ServerResponse<String> uploadAssetData(MultipartFile file, String assetSetName,
                                   HttpServletRequest requestParameter) throws Exception {
 
@@ -60,7 +71,18 @@ public class AssetController {
         }
     }
 
-    //
+    /**
+     * 删除 资产set 数据
+     * @param assetSetName 删除的资产名称
+     * @param isForever 是否永久删除
+     * @return todo
+     */
+    @ApiOperation(value = "删除资产集合数据", notes = "***")
+    @DeleteMapping(value = "set.do")
+    public ServerResponse deleteAssetSet(String assetSetName, boolean isForever) {
+        System.out.println(isForever);
+        return assetBiz.deleteAssetSet(assetSetName, isForever);
+    }
 
     /**
      * 维修资产 增加属性数据 data-kv
@@ -79,14 +101,6 @@ public class AssetController {
         dateMap.remove("assetSetName");
         // todo 更新资产统计表
         return assetBiz.insertAssetData(dateMap, assetId,  assetSetName);
-    }
-
-    // todo 资产绑定默认流程
-    @PutMapping(value = "assertBind.do")
-    public String assertBind( @RequestParam("assertId") String assertId,
-                                 @RequestParam("flowId") String flowId,
-                                 HttpServletRequest request) {
-        return null;
     }
 
     /**
@@ -112,7 +126,7 @@ public class AssetController {
     }
 
     /**
-     * 查询当前已有的资产数据
+     * 查询当前已有的资产集合名称
      * @return todo
      */
     @GetMapping(value = "AssetNameList.do")
@@ -126,7 +140,7 @@ public class AssetController {
      * @param flowName 流程名称 eg 阿里索电维修
      * @return
      */
-    @GetMapping(value = "assetFlowStart.do")
+    @GetMapping(value = "flowBind.do")
     public ServerResponse<String> assetFlowStart(String assetSetName, String flowName) {
         return ServerResponse.createBySuccess("success",assetBiz.AssetFlowStart(assetSetName, flowName));
     }
@@ -145,7 +159,7 @@ public class AssetController {
     }
 
     @Autowired
-    private MongoUtilImpl mongoUtil;
+    private MongoUtilDaoImpl mongoUtil;
 
     @PutMapping(value = "currentFlowStatus.do")
     public ServerResponse<String> currentFlowStatus(String assetSetName, String assetId,

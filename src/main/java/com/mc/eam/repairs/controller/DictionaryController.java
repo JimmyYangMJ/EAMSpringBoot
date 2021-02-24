@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("dictionary")
 public class DictionaryController {
 
-
-
     /**
      * 数据字典 根据中文 查询 英文
      * @param key

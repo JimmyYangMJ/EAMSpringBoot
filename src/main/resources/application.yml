@@ -17,3 +17,6 @@ server:
   port: 8081
   resources:
     static-locations: classpath:/templates/
+
+swagger:
+  enabled: true

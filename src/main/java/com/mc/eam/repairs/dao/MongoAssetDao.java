@@ -76,4 +76,6 @@ public interface MongoAssetDao {
      */
     JSONArray queryPerPages(String collectionName, Integer pageSize, Integer page, Map queryMap);
 
+
+
 }

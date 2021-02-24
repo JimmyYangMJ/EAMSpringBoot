@@ -4,8 +4,7 @@ package com.mc.eam.repairs.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.MongoFlowDao;
-import com.mc.eam.repairs.dao.MongoUtil;
-import com.mc.eam.repairs.service.BO.FlowInfoBO;
+import com.mc.eam.repairs.dao.impl.MongoUtilDaoImpl;
 import com.mc.eam.repairs.service.FlowBiz;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,7 @@ public class FlowBizImpl implements FlowBiz {
     private MongoFlowDao mongoFlowDao;
 
     @Autowired
-    private MongoUtil mongoUtil;
+    private MongoUtilDaoImpl mongoUtil;
 
     /**
      * 获取 某流程 某阶段 form 信息

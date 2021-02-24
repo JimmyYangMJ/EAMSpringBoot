@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,7 +34,6 @@ public interface AssetBiz {
      */
     boolean excelToMongo(MultipartFile mFile, String assetSetName, Map requestMap) throws Exception;
 
-
     ServerResponse<JSONObject> queryAssetPerPages(String collectionName, Integer pageSize, Integer page, Map queryMap) throws JSONException;
 
     /**
@@ -49,7 +49,6 @@ public interface AssetBiz {
      */
     boolean containAssetName(String assetName);
 
-
     /**
      * 维修资产 增加属性数据 data-kv
      * @param dateMap
@@ -62,4 +61,10 @@ public interface AssetBiz {
 
     // 绑定资产流程
     String AssetFlowStart(String assetSetName, String flowName);
+
+    // 删除某资产集合
+    ServerResponse deleteAssetSet(String assetSetName, boolean isForever);
+
+    // 查询当前已有的资产集合名称
+    List<String> queryAssetSetList(String assetSetName, boolean containIsDelete);
 }

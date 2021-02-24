@@ -1,12 +1,12 @@
 package com.mc.eam.repairs;
 
+import com.alibaba.fastjson.JSONObject;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
+import java.util.*;
 
 /**
  * @author ymj
@@ -15,38 +15,44 @@ import java.util.Date;
  */
 public class Test {
     public static void main(String[] args) {
-        String a = "601cf3004703714b00d00875";
-        ObjectId objectId = new ObjectId(a);
-        String k = "{\"forecast\":[{\"id\": 4},{\"id\": 5},{\"id\": 6}]}";
+//        String a = "601cf3004703714b00d00875";
+//        ObjectId objectId = new ObjectId(a);
+//        String k = "{\"forecast\":[{\"id\": 4},{\"id\": 5},{\"id\": 6}]}";
+//
+//        Document document = Document.parse(k);
+//        ArrayList<Document> arrayList = (ArrayList<Document>) document.get("forecast");
+//        System.out.println(arrayList.toString());
+//        System.out.println(arrayList.size());
+//        System.out.println(arrayList.get(1));
 
-        Document document = Document.parse(k);
-        ArrayList<Document> arrayList = (ArrayList<Document>) document.get("forecast");
-        System.out.println(arrayList.toString());
-        System.out.println(arrayList.size());
-        System.out.println(arrayList.get(1));
+        Map<String, Object> map = null;
+//        map.put("a", "a");
+//        map.put("b.c", "123");
+//        JSONObject json = new JSONObject(map);
+        System.out.println(Document.parse(JSONObject.toJSONString(map)));
+        System.out.println(JSONObject.toJSONString(map));
 
-        String k2 = "{\"forecast\":[{\"id\": 4},{\"id\": 5},{\"id\": 6}]}";
-        System.out.println("**********");
-        Document documents = Document.parse(k2);
-        Object arrayLists =  documents.get("forecast");
-        System.out.println(arrayLists.toString());
-        System.out.println(arrayLists.getClass().getName());
-        System.out.println(ArrayList.class.getName());
-        System.out.println("**********");
+//        System.out.println(json.toJSONString());
 
+//
+//        for (Document d: arrayLists) {
+//            String finalValue = keyArray[keyArray.length-1];
+//            if (d.containsKey(finalValue)) {
+//                valueList.add(d.getString(finalValue));
+//            }
+//         }
+//        System.out.println(valueList.toString());
 
-        Date date = objectId.getDate();
-
-        LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-
-        System.out.println(ObjectId.isValid(a));
-        System.out.println(objectId.toString());
-        System.out.println(localDateTime);
-
-        a = ObjectId.createFromLegacyFormat(localDateTime.getSecond(),
-                objectId.getMachineIdentifier(),
-                3).toString();
-        System.out.println(a);
+//        LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+//
+//        System.out.println(ObjectId.isValid(a));
+//        System.out.println(objectId.toString());
+//        System.out.println(localDateTime);
+//
+//        a = ObjectId.createFromLegacyFormat(localDateTime.getSecond(),
+//                objectId.getMachineIdentifier(),
+//                3).toString();
+//        System.out.println(a);
     }
 
 }

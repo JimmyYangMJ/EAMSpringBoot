@@ -4,15 +4,16 @@ package com.mc.eam.repairs.service.impl;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
+import com.mc.eam.repairs.common.ResponseCode;
 import com.mc.eam.repairs.common.ServerResponse;
 import com.mc.eam.repairs.dao.impl.MongoAssetDaoImpl;
 import com.mc.eam.repairs.dao.impl.MongoFlowDaoImpl;
+import com.mc.eam.repairs.dao.impl.MongoUtilDaoImpl;
 import com.mc.eam.repairs.service.AssetBiz;
 import com.mc.eam.repairs.util.FileUtil;
 import com.mc.eam.repairs.util.excel.*;
 import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +36,9 @@ public class AssetBizImpl implements AssetBiz {
 
     @Autowired
     private MongoFlowDaoImpl mongoFlowDao;
+
+    @Autowired
+    private MongoUtilDaoImpl mongoUtilDao;
 
     /**
      * 保存文件
@@ -167,4 +171,49 @@ public class AssetBizImpl implements AssetBiz {
         return  mongoAssetDao.updateAssetData(updateDataMap, null , "asset_" +assetSetName, "currentFlowStatus");
 
     }
+
+    // todo 删除某 资产集合 数据
+    @Override
+    public ServerResponse deleteAssetSet(String assetSetName, boolean isForever) {
+        HashMap hashMap = new HashMap<String, String>();
+        hashMap.put("assetSetName", assetSetName);
+        List<String> idList = mongoUtilDao.findUniqueIndex("asset_statistics", hashMap);
+        String id;
+        if(idList.size() == 1) {
+            id =  idList.get(0);
+        }else {
+            return ServerResponse.createByErrorMessage("资产名异常");
+        }
+        if (isForever) {
+            // 删除 数据库
+            int answerCode = mongoUtilDao.deleteCollection("asset_" + assetSetName);
+            if(answerCode == ResponseCode.SUCCESS.getCode()) {
+                // 删除 asset_statistics 中 对应 document 信息
+                Map map = new HashMap();
+                map.put("_id", id);
+                mongoUtilDao.deleteDocument("asset_statistics", map);
+            } else if (answerCode == ResponseCode.NULL.getCode()){
+                return ServerResponse.createByErrorMessage("已删除");
+            }
+        } else {
+            System.out.println("暂时删除");
+            Map map = new HashMap<String, String>(5);
+            map.put("isDelete", "true");
+            // 更新 asset_statistics 数据表 信息
+            mongoUtilDao.updateDocumentValue(map, id,"asset_statistics","isDelete");
+
+        }
+        return ServerResponse.createBySuccess(ResponseCode.SUCCESS.getDesc());
+    }
+
+    // todo
+    @Override
+    public List<String> queryAssetSetList(String assetSetName, boolean containIsDelete) {
+        // 查询 资产名称对应的 id
+
+
+//        mongoUtilDao.findNameList("asset_statistics",)
+        return null;
+    }
+
 }
