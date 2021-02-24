@@ -70,16 +70,16 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
     /**
      *  指定资产 插入 data 数据 (key 相同时 更新  value)
      * @param map data 数据参数
-     * @param id  资产 id, 如果为 Null 则  插入所有
+     * @param assetId  资产 id, 如果为 Null 则  插入所有
      * @param collectionName  集合名称（数据表）
      * @param jsonKey kv,其中 v 为 json ，要插入的 数据参数
      * @return
      */
     @Override
-    public String updateAssetData(Map map, String id, String collectionName, String jsonKey) {
+    public String updateAssetData(Map map, String assetId, String collectionName, String jsonKey) {
         Query query = new Query();
-        if(id != null) {
-            query.addCriteria(Criteria.where("_id").is(id));
+        if(assetId != null) {
+            query.addCriteria(Criteria.where("_id").is(assetId));
         }
         Update update = new Update();
         Iterator<Map.Entry<String, String>> iter = map.entrySet().iterator();

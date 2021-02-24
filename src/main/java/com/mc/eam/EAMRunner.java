@@ -20,7 +20,7 @@ public class EAMRunner implements ApplicationRunner {
     public void run(ApplicationArguments applicationArguments) throws Exception {
         // todo 加载数据字典， 后期 可采用 redis 存储
         /** 导入数据 */
-        String dictionary = "D:/数据字典.xls";
+        String dictionary = "数据字典.xls";
         EasyExcel.read(dictionary,new ExcelDictionaryListener()).sheet("data").doRead();
     }
 

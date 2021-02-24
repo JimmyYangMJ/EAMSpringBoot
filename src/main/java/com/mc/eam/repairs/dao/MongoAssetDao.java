@@ -41,11 +41,11 @@ public interface MongoAssetDao {
     /**
      *  指定资产 插入 data 数据 (key 相同时 更新  value)
      * @param map data 数据参数
-     * @param id  资产 id
+     * @param assetId  资产 id
      * @param collectionName  集合名称（数据表）
      * @return
      */
-    String updateAssetData(Map map, String id, String collectionName, String jsonKey);
+    String updateAssetData(Map map, String assetId, String collectionName, String jsonKey);
 
     /**
      * 更新资产统计表

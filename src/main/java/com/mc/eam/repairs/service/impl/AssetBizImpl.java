@@ -159,12 +159,12 @@ public class AssetBizImpl implements AssetBiz {
         }
         List<Map> stages = (List<Map>) documents.get(0).get("stage");
         System.out.println(stages);
-        Map<String, String> dateMap = new LinkedHashMap(7);
-        dateMap.put("flow", flowName);
-        dateMap.put("currentStage",stages.get(1).get("flowStepName").toString() );
-        dateMap.put("nextStage", stages.get(2).get("flowStepName").toString());
-        dateMap.put("pendingStaff",stages.get(1).get("handler_id").toString() );
-        return  mongoAssetDao.updateAssetData(dateMap, null , "asset_" +assetSetName, "currentFlowStatus");
+        Map<String, String> updateDataMap = new LinkedHashMap(7);
+        updateDataMap.put("flow", flowName);
+        updateDataMap.put("currentStage",stages.get(1).get("flowStepName").toString() );
+        updateDataMap.put("nextStage", stages.get(2).get("flowStepName").toString());
+        updateDataMap.put("pendingStaff",stages.get(1).get("handler_id").toString() );
+        return  mongoAssetDao.updateAssetData(updateDataMap, null , "asset_" +assetSetName, "currentFlowStatus");
 
     }
 }

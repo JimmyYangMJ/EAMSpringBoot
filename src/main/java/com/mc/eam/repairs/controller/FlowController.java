@@ -48,7 +48,7 @@ public class FlowController {
     private MongoTemplate mongoTemplate;
 
     /**
-     * 新增审批流程 / todo  修改流程（后期）
+     * 新增审批流程 直接json / todo  修改流程（后期）
      * @param flowForm
      * @return
      */
@@ -76,7 +76,7 @@ public class FlowController {
 
     /**
      * 查询所有流程名称列表，
-     * @return data 返回 <流程id, 流程名称>
+     * @return data list 返回 <流程id, 流程名称>
      */
     @GetMapping(value = "allName.do")
     public ServerResponse<List<String>> allName() {

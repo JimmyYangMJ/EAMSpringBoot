@@ -19,7 +19,7 @@ import java.util.*;
  * @description: 填表,CRUD
  */
 @RestController
-@RequestMapping("table")
+@RequestMapping("asset")
 public class AssetController {
 
     @Autowired
@@ -28,8 +28,8 @@ public class AssetController {
     private MongoAssetDao mongoAssetDao;
 
     @GetMapping("test.do")
-    public  String test(){
-        return null;
+    public ServerResponse<List> test(){
+        return ServerResponse.createBySuccess(mongoUtil.findNameList("flow","stage.flowStepName","603083832f6b34553c9dded4"));
     }
     /**
      * 上传原始资产数据（创建 新数据库表：asset_，asset_statistics）
@@ -60,23 +60,25 @@ public class AssetController {
         }
     }
 
+    //
+
     /**
      * 维修资产 增加属性数据 data-kv
-     * @param assertId 资产 id
-     * @param assertSetName 资产类名称
+     * @param assetId 资产 id
+     * @param assetSetName 资产类名称
      * @param request
      * @return todo 格式化
      */
-    @PutMapping(value = "addAssertInfo.do")
-    public String addAssetInfo(String assertId, String assertSetName,
+    @PutMapping(value = "addAssetInfo.do")
+    public String addAssetInfo(String assetId, String assetSetName,
                                  HttpServletRequest request) {
-        System.out.println(assertId + assertSetName);
+        System.out.println(assetId + assetSetName);
         Map<String,String[]> dateMap = new HashMap<>(request.getParameterMap());
         System.out.println(dateMap.toString());
-        dateMap.remove("assertId");
-        dateMap.remove("assertSetName");
+        dateMap.remove("assetId");
+        dateMap.remove("assetSetName");
         // todo 更新资产统计表
-        return assetBiz.insertAssetData(dateMap, assertId,  assertSetName);
+        return assetBiz.insertAssetData(dateMap, assetId,  assetSetName);
     }
 
     // todo 资产绑定默认流程
@@ -129,7 +131,12 @@ public class AssetController {
         return ServerResponse.createBySuccess("success",assetBiz.AssetFlowStart(assetSetName, flowName));
     }
 
+    // todo 更新资产状态数据
+    // 1 当前阶段，2. 下一阶段， 3. 处理人员 ***
+
+
     // todo 查询 个人 待处理事件 currentFlowStatus.pendingStaff ==
+
     @GetMapping(value = "individualHandle.do")
     public ServerResponse<JSONObject> individualHandle(String assetSetName, Integer pageSize, Integer page, String staffName) {
         Map map = new HashMap();
@@ -137,9 +144,37 @@ public class AssetController {
         return assetBiz.queryAssetPerPages("asset_" + assetSetName, pageSize, page, map);
     }
 
-
     @Autowired
     private MongoUtilImpl mongoUtil;
+
+    @PutMapping(value = "currentFlowStatus.do")
+    public ServerResponse<String> currentFlowStatus(String assetSetName, String assetId,
+                                                    HttpServletRequest request) {
+
+        Map<String,String[]> httpDataMap = new HashMap<>(request.getParameterMap());
+
+        httpDataMap.remove("assetId");
+        httpDataMap.remove("assetSetName");
+
+        //
+        Map<String, String> dataMap = new LinkedHashMap<>();
+        Iterator<Map.Entry<String, String[]>> iter = httpDataMap.entrySet().iterator();
+        while(iter.hasNext()) {
+            Map.Entry<String, String[]> entry = iter.next();
+            // 获取key
+            String key = entry.getKey();
+            // 获取value
+            String value = entry.getValue()[0];
+            dataMap.put(key, value);
+        }
+        //
+        System.out.println("**********");
+        System.out.println(dataMap.toString());
+        System.out.println(assetSetName);
+        System.out.println(assetId);
+        return ServerResponse.createBySuccess(mongoUtil.updateDocumentValue(dataMap, assetId, "asset_" + assetSetName, "currentFlowStatus"));
+
+    }
     /**
      *  测试用, 直接访问 dao 层
      */
@@ -175,8 +210,6 @@ public class AssetController {
         }
 
         return ServerResponse.createByError();
-
-
 
     }
 
