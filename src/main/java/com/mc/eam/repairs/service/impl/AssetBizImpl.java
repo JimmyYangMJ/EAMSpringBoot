@@ -12,7 +12,10 @@ import com.mc.eam.repairs.dao.impl.MongoUtilDaoImpl;
 import com.mc.eam.repairs.service.AssetBiz;
 import com.mc.eam.repairs.util.FileUtil;
 import com.mc.eam.repairs.util.excel.*;
+import com.mongodb.client.ClientSession;
+
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -186,21 +189,30 @@ public class AssetBizImpl implements AssetBiz {
         }
         if (isForever) {
             // 删除 数据库
+            // todo 需要原子操作，或者 事务 。 增加某些机制
+            /**
+             *  ClientSession clientSession = null;
+             *         clientSession.startTransaction();
+             *  import com.mongodb.client.ClientSession;
+             */
+//            ClientSession clientSession = null;
+//            clientSession.startTransaction();
             int answerCode = mongoUtilDao.deleteCollection("asset_" + assetSetName);
             if(answerCode == ResponseCode.SUCCESS.getCode()) {
                 // 删除 asset_statistics 中 对应 document 信息
-                Map map = new HashMap();
-                map.put("_id", id);
+                Map map = new HashMap<String, Object>();
+                map.put("_id", new ObjectId(id));
                 mongoUtilDao.deleteDocument("asset_statistics", map);
             } else if (answerCode == ResponseCode.NULL.getCode()){
                 return ServerResponse.createByErrorMessage("已删除");
             }
+//            clientSession.abortTransaction();
         } else {
             System.out.println("暂时删除");
             Map map = new HashMap<String, String>(5);
             map.put("isDelete", "true");
             // 更新 asset_statistics 数据表 信息
-            mongoUtilDao.updateDocumentValue(map, id,"asset_statistics","isDelete");
+            mongoUtilDao.updateDocumentValue(map, id,"asset_statistics");
 
         }
         return ServerResponse.createBySuccess(ResponseCode.SUCCESS.getDesc());

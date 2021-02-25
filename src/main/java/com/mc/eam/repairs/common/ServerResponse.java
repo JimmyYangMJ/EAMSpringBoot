@@ -95,6 +95,18 @@ public class ServerResponse<T> implements Serializable {
         return new ServerResponse<T>(errorCode,errorMessage);
     }
 
+    public static <T> ServerResponse<T> createByNull(){
+        return new ServerResponse<T>(ResponseCode.NULL.getCode(),ResponseCode.NULL.getDesc());
+    }
+
+    public static <T> ServerResponse<T> createByNullMessage(String nullMessage){
+        return new ServerResponse<T>(ResponseCode.NULL.getCode(), nullMessage);
+    }
+
+    public static <T> ServerResponse<T> createByNullCodeMessage(int nullCode,String nullMessage){
+        return new ServerResponse<T>(nullCode, nullMessage);
+    }
+
 
 
 

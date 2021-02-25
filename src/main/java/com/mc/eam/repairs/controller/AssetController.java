@@ -34,14 +34,15 @@ public class AssetController {
     @GetMapping("test.do")
     public ServerResponse<List> test(String key){
         if (key == null) {
-            return ServerResponse.createBySuccess(mongoUtil.findUniqueIndex("flow",null));
+            return ServerResponse.createBySuccess(mongoUtilDao.findUniqueIndex("flow",null));
         }else {
             HashMap<String, String> hashMap = new HashMap<>();
             hashMap.put("name",key);
-            return ServerResponse.createBySuccess(mongoUtil.findUniqueIndex("flow", hashMap));
+            return ServerResponse.createBySuccess(mongoUtilDao.findUniqueIndex("flow", hashMap));
         }
 
     }
+
     /**
      * 上传原始资产数据（创建 新数据库表：asset_，asset_statistics）
      * @param file 上传文件
@@ -159,10 +160,10 @@ public class AssetController {
     }
 
     @Autowired
-    private MongoUtilDaoImpl mongoUtil;
+    private MongoUtilDaoImpl mongoUtilDao;
 
-    @PutMapping(value = "currentFlowStatus.do")
-    public ServerResponse<String> currentFlowStatus(String assetSetName, String assetId,
+    @PutMapping(value = "toNextStage.do")
+    public ServerResponse<String> toNextStage(String assetSetName, String assetId,
                                                     HttpServletRequest request) {
 
         Map<String,String[]> httpDataMap = new HashMap<>(request.getParameterMap());
@@ -171,6 +172,7 @@ public class AssetController {
         httpDataMap.remove("assetSetName");
 
         //
+        Map<String, Object> updateMap = new HashMap<>();
         Map<String, String> dataMap = new LinkedHashMap<>();
         Iterator<Map.Entry<String, String[]>> iter = httpDataMap.entrySet().iterator();
         while(iter.hasNext()) {
@@ -181,12 +183,9 @@ public class AssetController {
             String value = entry.getValue()[0];
             dataMap.put(key, value);
         }
-        //
-        System.out.println("**********");
-        System.out.println(dataMap.toString());
-        System.out.println(assetSetName);
-        System.out.println(assetId);
-        return ServerResponse.createBySuccess(mongoUtil.updateDocumentValue(dataMap, assetId, "asset_" + assetSetName, "currentFlowStatus"));
+        updateMap.put("currentFlowStatus",dataMap);
+        mongoUtilDao.updateDocumentValue(updateMap, assetId, "asset_" + assetSetName);
+        return ServerResponse.createBySuccess();
 
     }
     /**
@@ -198,7 +197,7 @@ public class AssetController {
     @GetMapping(value = "assetItem.do")
     public ServerResponse<JSONObject> assetItem(String assetSetName, String assetId) {
         return ServerResponse.createBySuccess(
-                mongoUtil.findValue("currentFlowStatus", "_id", assetId, "asset_" + assetSetName));
+                mongoUtilDao.findValue("currentFlowStatus", "_id", assetId, "asset_" + assetSetName));
     }
 
     // todo 查询 需要填写 的表项
@@ -212,7 +211,7 @@ public class AssetController {
     public ServerResponse<JSONObject> getStageInfo(@RequestParam("stage") String stageName,
                                @RequestParam("flow") String flowName ) {
 
-        JSONObject jsonObject = mongoUtil.findValue("stage", "stage.flowStepName", stageName, "flow");
+        JSONObject jsonObject = mongoUtilDao.findValue("stage", "stage.flowStepName", stageName, "flow");
         JSONArray jsonArray = jsonObject.getJSONArray("stage");
         for (Object j: jsonArray) {
             JSONObject jo = (JSONObject) j;

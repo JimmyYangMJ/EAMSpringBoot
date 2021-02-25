@@ -7,6 +7,7 @@ import com.mc.eam.repairs.dao.MongoUtilDao;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.result.UpdateResult;
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
@@ -92,6 +93,7 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
         }
         return valueList;
     }
+
     @Override
     public List<String> findNameList(String collectionName, String keyName) {
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
@@ -150,42 +152,18 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
      * @param map 更新的 data  kv 对
      * @param id  document id
      * @param collectionName 集合名称
-     * @param jsonKey  更新 的 father value
-     * @return
+     * @return the number of documents modified
      */
     @Override
-    public String updateDocumentValue(Map map, String id, String collectionName, String jsonKey) {
-        Query query = new Query();
-        if(id != null) {
-            query.addCriteria(Criteria.where("_id").is(new ObjectId(id)));
-        }
-        Update update = new Update();
-        Iterator<Map.Entry<String, String>> iter = map.entrySet().iterator();
-        while(iter.hasNext()) {
-            Map.Entry<String, String> entry = iter.next();
-            // 获取key
-            String key;
-            if (jsonKey.length() == 0) {
-                key = jsonKey + "." + entry.getKey();
-            } else {
-                key = entry.getKey();
-            }
-            System.out.println(jsonKey);
-            // 获取value
-            String value = entry.getValue();
-            update.set(key, value);
-        }
-        UpdateResult updateResult = mongoTemplate.updateFirst(query, update, collectionName);
-        return updateResult.toString();
+    public long updateDocumentValue(Map map, String id, String collectionName) {
+        MongoCollection collection  = mongoTemplate.getCollection(collectionName);
+        return collection.updateOne(new Document(map), new Document("_id", new ObjectId(id))).getModifiedCount();
     }
 
-
-    // todo 删除 某 document (永久删除)
-
     /**
-     *
+     * 删除 collection
      * @param collectionName
-     * @return 响应码
+     * @return 响应码 ResponseCode
      */
     @Override
     public int deleteCollection(String collectionName) {
@@ -198,31 +176,30 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
     }
 
 
-    //
+    /**
+     * 删除 某 collection 某符合条件的 所有 document
+     * @param collectionName 集合名称
+     * @param filters 查询条件 <key, value> 需要符合document规范
+     * @return 删除 数据的条数
+     */
     @Override
-    public boolean deleteDocument(String collectionName,Map filters) {
-        Query query = new Query();
-        if(filters.containsKey("_id")) {
-            query.addCriteria(Criteria.where("_id").is(new ObjectId(filters.get("_id").toString())));
-        }
-        mongoTemplate.remove(query,collectionName);
-        return true;
+    public long deleteDocument(String collectionName,Map filters) {
+
+        MongoCollection collection  = mongoTemplate.getCollection(collectionName);
+        return collection.deleteMany(new Document(filters)).getDeletedCount();
     }
 
     /**
-     * 在 集合中 查询 符合 条件 的 document 对应的 _id
+     * 查询 在 collection 中  符合 条件 的 document 对应的 _id
      * @param collectionName 集合名称
-     * @param filter 查询条件 Map
-     * @return
+     * @param filter 查询条件 Map (不包含 _id)
+     * @return  _id 集合
      */
     @Override
     public List findUniqueIndex (String collectionName, @Nullable Map filter) {
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
         List idList = new ArrayList<String>();
-        Document filterDocument = new Document();
-        if (filter != null)
-            filterDocument = Document.parse(JSONObject.toJSONString(filter));
-
+        Document filterDocument = new Document(filter);
         FindIterable<Document> documents = collection.find()
                 .filter(filterDocument)
                 .projection(

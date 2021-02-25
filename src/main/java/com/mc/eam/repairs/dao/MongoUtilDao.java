@@ -37,21 +37,39 @@ public interface MongoUtilDao {
 
     JSONObject findValue(String keyName,  String queryKey, String queryValue, String collectionName);
 
-    String updateDocumentValue(Map map, String id, String collectionName, String jsonKey);
+    /**
+     * 更新 数据库 中某 数据表项 信息
+     * @param updateMap 需要更新的参数
+     * @param id 唯一键值
+     * @param tableName 数据表名称
+     * @return count of changes
+     */
+    long updateDocumentValue(Map updateMap, String id, String tableName);
 
-    int deleteCollection(String collectionName);
+    /**
+     * 删除 表
+     * @param tableName 表名称
+     * @return 响应码  ResponseCode
+     */
+    int deleteCollection(String tableName);
 
-    boolean deleteDocument(String collectionName, Map filters);
+    /**
+     * 删除 某 表 某符合条件的数据
+     * @param tableName 数据表名称
+     * @param filters 查询条件 <key, value>
+     * @return
+     */
+    long deleteDocument(String tableName, Map filters);
 
     // 根据 条件查询 对应 某表项（document） 的 键值（ _id）
 
     /**
      * 某表中 根据条件查询 对应 唯一索引
      * @param tableName 表名
-     * @param filter 查询条件
+     * @param filters 查询条件
      * @return  对应 关键字/主键/唯一索引
      */
-    List findUniqueIndex (String tableName, Map filter);
+    List findUniqueIndex (String tableName, Map filters);
 
 
 }

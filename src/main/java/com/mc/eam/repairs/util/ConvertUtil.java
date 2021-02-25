@@ -28,7 +28,7 @@ public class ConvertUtil {
     }
 
     /**
-     * 对象转换为Document (Spring Bean Obj 转为 Document)
+     * 对象转换为 Document (Spring Bean Obj 转为 Document)
      * @param o  对象
      * @return Document
      * @throws IllegalArgumentException
@@ -44,5 +44,7 @@ public class ConvertUtil {
         }
         return document;
     }
+
+
 
 }
