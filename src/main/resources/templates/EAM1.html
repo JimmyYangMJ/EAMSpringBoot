@@ -11,9 +11,10 @@
 
 	<body>
 		<div id="app">
-			<el-container style="height: 800px; border: 1px solid #eee">
-				<el-aside width="200px" style="background-color: rgb(238, 241, 246)">
-					<el-menu :default-openeds="['1']">
+			<el-container style="height: 1200px; border: 1px solid #eee">
+				<el-aside width="initial" style="background-color: rgb(238, 241, 246)">
+                    <div style="float:left">
+					<el-menu :default-openeds="['1']" :collapse="isCollapse">
 						<el-submenu index="1">
 							<template slot="title"><i class="el-icon-message"></i>导航一</template>
 							<el-menu-item-group>
@@ -44,123 +45,143 @@
 							</el-submenu>
 						</el-submenu>
 					</el-menu>
+                    </div>
 				</el-aside>
 
 				<el-container>
 					<el-header style="text-align: right; font-size: 12px">
+						<div style="float:left">
+							<el-radio-group v-model="isCollapse" style="margin-bottom: 20px;">
+								<el-radio-button :label="false">展开</el-radio-button>
+								<el-radio-button :label="true">收起</el-radio-button>
+							</el-radio-group>
+						</div>
 						<span>Jimmy</span>
 					</el-header>
 
-					<el-main>
+					<div class="1" style="position: relative; height: 100%;">
+					<el-main >
 
-						<!-- Form -->
-						<el-button type="primary" size="small" @click="dialogFormVisible = true">资产导入</el-button>
+						<div class="2" style="float:left; height: 100%; width:800px;margin:0 8px;POSITION:absolute">
+								<!--中心-->
+								<!--资产导入 Form -->
+								<el-button type="primary" size="small" @click="dialogFormVisible = true">资产导入</el-button>
+							   	<!--资产导入模态框-->
 								<template>
-						<el-dialog title="新建资产" :visible.sync="dialogFormVisible">
-							<h1>上传资产 excel 表</h1>
-							<el-form ref="form" :model="assetImportForm" label-width="80px">
-								<el-form-item label="所属部门:" >
-									<el-cascader placeholder="搜索：维修" v-model="assetImportForm.department" :options="departmentOptions" filterable></el-cascader>
-								</el-form-item>
-								<el-form-item label="资产名称:" >
-									<el-input v-model="assetImportForm.assetName" placeholder="请输入资产名称" ></el-input>
-								</el-form-item>
-								<el-form-item label="负责人:" >
-									<el-cascader placeholder="搜索：张三" v-model="assetImportForm.charge" :options="staffOptions" filterable></el-cascader>
-								</el-form-item>
-							</el-form>
-
-							<el-upload class="upload-demo" action=""  :http-request="uploadSectionFile" multiple>
-								<el-button size="small" type="success">上传文件</el-button>
-								<!--<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>-->
-								<div class="el-upload__tip" slot="tip">只能上传excel文件 {{"| 状态： " + message}}</div>
-							</el-upload>
-<!--							<el-upload-->
-<!--									class="upload-demo"-->
-<!--									ref="upload"-->
-<!--									action=""-->
-<!--									:on-preview="handlePreview"-->
-<!--									:on-remove="handleRemove"-->
-<!--									:file-list="fileList"-->
-<!--									:auto-upload="false">-->
-<!--								<el-button slot="trigger" size="small" type="primary">选取文件</el-button>-->
-<!--								<el-button style="margin-left: 10px;" size="small" type="success" @click="submitUpload">上传到服务器</el-button>-->
-<!--								<div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>-->
-<!--							</el-upload>-->
-							<div slot="footer" class="dialog-footer">
-								<el-button @click="dialogFormVisible = false">取 消</el-button>
-								<el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
-							</div>
-						</el-dialog>
-								</template>
-						<!-- Form end -->
-						<div id="appcenter">
-							<!--查询资产 选项-->
-							<el-form :inline="true" :model="formInline" class="demo-form-inline">
-								<el-form-item label="资产类型">
-									<el-select v-model="formInline.table" placeholder="资产表" @click.native="getAssetList" filterable>
-										<template v-for="(v, k, index) in assetNameList">
-										<el-option   :label=v :value=v></el-option>
-										</template>
-									</el-select>
-								</el-form-item>
-								<el-form-item>
-									<el-button type="primary" @click="onSubmit">查询</el-button>
-								</el-form-item>
-							</el-form>
-                            <!--查询资产 选项 end-->
-
-							<div class="boxShadow">
-								<div style="margin-top: 20px">
-                                    <!-- excel 导出-->
-									<el-button @click="exportExcel" size="small">导出excel</el-button>
-
-                                    <!-- 数据表格-->
-									<el-table id='tableExcel' :data="tables" ref="multipleTable" style="width: 100%" @selection-change='selectArInfo'>
-										<el-table-column type="selection" width="45px"></el-table-column>
-										<el-table-column fixed label="序号" width="62px" type="index"></el-table-column>
-											<template v-for='(col) in tableData'>
-												<el-table-column sortable :show-overflow-tooltip="true" :prop="col.dataItem" :label="col.dataName" :key="col.dataItem" width="124px">
-												</el-table-column>
-											</template>
-										<el-table-column fixed="right" label="操作" width="100">
-											<template slot-scope="scope">
-												<el-button @click="handleClickUpdate(scope.row)" type="text" size="small">处理</el-button>
-												<el-button type="text" size="small">详情</el-button>
-											</template>
-										</el-table-column>
-										<!--隐藏资产id-->
-										<el-table-column fixed label="id" width="62px" type="index" v-if=false></el-table-column>
-									</el-table>
-                                    <!-- 数据表格 end-->
-
-                                    <!-- 资产操作 -->
-									<el-dialog title="资产更新"  :visible.sync="dialogUpdateVisible">
-										<h1>更新资产数据</h1>
-										<h1>当前阶段：{{assetUpdate.currentStage}}</h1>
-										<el-form :model="assetUpdate">
-											<template v-for='(v, k, index) in assetUpdate.form'  class="demo">
-												<el-form-item  :label= v :label-width="formLabelWidth">
-													<el-input  type="text" v-model="forms[k]"></el-input>
-												</el-form-item>
-											</template>
-											<el-form-item label="下一阶段" :label-width="formLabelWidth">
-												<el-select  v-model="formValues.item" placeholder="请选择流程阶段">
-													<el-option label="接收报修信息" value="shanghai"></el-option>
-													<el-option label="区域二" value="beijing"></el-option>
-												</el-select>
+									<el-dialog title="新建资产" :visible.sync="dialogFormVisible">
+										<h1>上传资产 excel 表</h1>
+										<el-form ref="form" :model="assetImportForm" label-width="80px">
+											<el-form-item label="所属部门:" >
+												<el-cascader placeholder="搜索：维修" v-model="assetImportForm.department" :options="departmentOptions" clearable filterable></el-cascader>
+											</el-form-item>
+											<el-form-item label="资产名称:" >
+												<el-input v-model="assetImportForm.assetName" placeholder="请输入资产名称" ></el-input>
+											</el-form-item>
+											<el-form-item label="负责人:" >
+												<el-cascader placeholder="搜索：张三" v-model="assetImportForm.charge" :options="staffOptions" filterable></el-cascader>
+											</el-form-item>
+											<el-form-item label="表头 行号" >
+												<el-input-number size="small" v-model="testData"></el-input-number>
 											</el-form-item>
 										</el-form>
+
+										<el-upload class="upload-demo" action=""  :http-request="uploadSectionFile" multiple>
+											<el-button size="small" type="success">上传文件</el-button>
+
+											<!--<div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>-->
+											<div class="el-upload__tip" slot="tip">只能上传excel文件 {{"| 状态： " + message}}</div>
+										</el-upload>
 										<div slot="footer" class="dialog-footer">
-											<el-button @click="dialogUpdateVisible = false">取 消</el-button>
-											<el-button type="primary" @click="updateAssetDate()">提 交</el-button>
+											<el-button @click="dialogFormVisible = false">取 消</el-button>
+											<el-button type="primary" @click="dialogFormVisible = false">确 定</el-button>
 										</div>
 									</el-dialog>
-                                    <!-- 资产操作 end-->
+								</template>
+								<!--资产导入模态框 end ***-->
+								<!--资产导入 Form end ***-->
+								<div id="appcenter">
+									<!--查询资产 选项-->
+									<el-form :inline="true" :model="formInline" class="demo-form-inline">
+										<el-form-item label="资产类型">
+											<el-select v-model="formInline.table" placeholder="资产表" @click.native="getAssetSetNameList" filterable>
+												<template v-for="(v, k, index) in assetNameList">
+													<el-option   :label=v :value=v></el-option>
+												</template>
+											</el-select>
+										</el-form-item>
+										<el-form-item>
+											<el-button type="primary" @click="handlePaginationInit">查询</el-button>
+										</el-form-item>
+									</el-form>
+									<!--查询资产 选项 end-->
+
+									<div class="boxShadow">
+										<div style="margin-top: 20px">
+											<!-- excel 导出-->
+											<el-button @click="exportExcel" size="small">导出excel</el-button>
+
+											<!-- 数据表格-->
+											<el-table id='tableExcel' :data="tables" ref="multipleTable" style="width: 100%" @selection-change='selectArInfo'>
+												<el-table-column type="selection" width="45px"></el-table-column>
+												<el-table-column fixed label="序号" width="62px" type="index"></el-table-column>
+												<template v-for='(col) in tableData'>
+													<el-table-column sortable :show-overflow-tooltip="true" :prop="col.dataItem" :label="col.dataName" :key="col.dataItem" width="124px">
+													</el-table-column>
+												</template>
+												<el-table-column fixed="right" label="操作" width="100">
+													<template slot-scope="scope">
+														<el-button @click="handleClickUpdate(scope.row)" type="text" size="small">处理</el-button>
+														<el-button type="text" size="small">详情</el-button>
+													</template>
+												</el-table-column>
+												<!--隐藏资产id-->
+												<el-table-column fixed label="id" width="62px" type="index" v-if=false></el-table-column>
+											</el-table>
+											<!-- 数据表格 end-->
+											<!--分页-->
+											<div class="block">
+												<el-pagination
+														@size-change="handleSizeChange"
+														@current-change="handleCurrentChange"
+														:current-page= pagination.currentPage
+														:page-sizes="[10, 20, 50, 100, 200]"
+														:page-size="10"
+														layout="total, sizes, prev, pager, next, jumper"
+														:total=pagination.sum>
+												</el-pagination>
+											</div>
+											<!-- end-->
+
+											<!-- 资产操作 模态框 -->
+											<el-dialog title="资产更新"  :visible.sync="dialogUpdateVisible">
+												<h1>更新资产数据</h1>
+												<h1>当前阶段：{{assetUpdate.currentStage}}</h1>
+												<el-form :model="assetUpdate">
+													<template v-for='(v, k, index) in assetUpdate.form'  class="demo">
+														<el-form-item  :label = v :label-width="formLabelWidth">
+															<el-input  type="text" v-model="forms[k]"></el-input>
+														</el-form-item>
+													</template>
+													<el-form-item label="下一阶段" :label-width="formLabelWidth">
+														<el-select  v-model="formValues.item" placeholder="请选择流程阶段">
+															<el-option label="接收报修信息" value="shanghai"></el-option>
+															<el-option label="区域二" value="beijing"></el-option>
+														</el-select>
+													</el-form-item>
+												</el-form>
+												<div slot="footer" class="dialog-footer">
+													<el-button @click="dialogUpdateVisible = false">取 消</el-button>
+													<el-button type="primary" @click="updateAssetDate()">提 交</el-button>
+												</div>
+											</el-dialog>
+											<!-- 资产操作 end-->
+										</div>
+									</div>
 								</div>
-							</div>
+								<!--中心-->
 						</div>
 					</el-main>
+					</div>
 				</el-container>
 			</el-container>
 		</div>
@@ -176,11 +197,19 @@
 		.el-aside {
 			color: #333;
 		}
+		.el-menu-vertical-demo:not(.el-menu--collapse) {
+			width: 200px;
+			min-height: 400px;
+		}
+
+
 	</style>
 
 	<script type="text/javascript" src="js/vue.js"></script>
 	<script type="text/javascript" src="js/axios.js"></script>
 	<script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/dataJson/vmData.js"></script>
+	<script type="text/javascript" src="js/dataJson/dataMap.js"></script>
 	<!-- import JavaScript -->
 <!--	<script src="https://unpkg.com/element-ui/lib/index.js"></script>-->
 <!--	<script src="https://cdn.bootcdn.net/ajax/libs/xlsx/0.16.8/xlsx.js"></script>-->
@@ -190,7 +219,7 @@
 	<script>
 		//		var obj = JSON.parse('');
 		function columnList(obj) { // 获取 列名 {dataItem: "zhongwen", dataName: "中文"} ;
-			// 列名 set
+			console.log(obj);
 			var set = new Set();
 			for(var item in obj) {
 				var arr = Object.keys(obj[item].data);
@@ -200,7 +229,7 @@
 				}
 			}
 			var array = Array.from(set);
-
+			var map = dataDictionary;
 			var arrayObj = [];
 			for(i in array) {
 				var column = {
@@ -208,10 +237,10 @@
 					dataName: ""
 				};
 				column.dataItem = array[i];
-				column.dataName = array[i];
+				column.dataName = map[array[i]];
 				arrayObj.push(column);
-
 			}
+			console.log(arrayObj);
 			return arrayObj
 		}
 		function dataList(obj) {
@@ -227,100 +256,107 @@
 
 		var vm = new Vue({
 			el: "#app",
-			data: {
-				assetImportForm: {
-					assetName: '',
-					department: '', // 数组尾部为最终结果
-					charge: '' // 数组
-				},
-				assetNameList: [],
-				assetUpdate: {
-					id: {},
-					data: [],
-					form: {},
-					currentStage: '接收报修信息',
-					nextStage: ''
-				},
-				departmentOptions: [{
-					value: 'jishufuwushiyebu',
-					label: '技术服务事业部',
-					children: [{
-						value: 'weixiuzhongxing',
-						label: '维修中心'
-					}]
-				},{
-					value: 'yunyujisuanshiyebu',
-					label: '云与计算事业部',
-					children: [{
-						value: 'yunjishuyunwei',
-						label: '云技术运维'
-					}]
-				}],
-				staffOptions: [{
-					value: 'jishufuwushiyebu',
-					label: '技术服务事业部',
-					children: [{
-						value: 'weixiuzhongxing',
-						label: '维修中心',
-						children: [{
-							value: 'zhangsan',
-							label: '员工2'
-						}]
-					}]
-				},{
-					value: 'yunyujisuanshiyebu',
-					label: '云与计算事业部',
-					children: [{
-						value: 'yunjishuyunwei',
-						label: '云技术运维',
-						children: [{
-							value: 'zhangsan',
-							label: '员工1'
-						}]
-					}]
-				}],
-				tables: [],    // 表格数据
-				tableData: [], // 列名
-				message: "未上传",
-				formInline: {
-					user: '',
-					table: ''
-				},
-				form:{},
-				dialogFormVisible: false,
-				dialogUpdateVisible: false,
-				formValues: [],
-				forms:{},
-				formKeys:[],
-				formLabelWidth: '200px'
-
-			},
+			data: vmData,
 			mounted: function() {
-				// this.getAssetList();
 			},
 			methods: {
+				test: function(val) {
+					console.log(val);
+				},
+				handleOpen(key, keyPath) {
+					console.log(key, keyPath);
+				},
+				handleClose(key, keyPath) {
+					console.log(key, keyPath);
+				},
+				handlePaginationInit(){
 
-				getAssetList: function() {
-					var url = "http://127.0.0.1:8081/table/queryAssetNameList.do";
+					const that = this;
+					const table = "asset_" + that.formInline.table;
+					const url = 'http://localhost:8081/asset/queryPerPages.do';
+					axios.get(url, {
+						params: {
+							collectionName: table,
+							pageSize: that.pagination.pageSize,
+							page: that.pagination.currentPage,
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						vm.$data.pagination.sum = sum;
+						const list = data.dataList
+						// 列名
+						const arrayObj = columnList(list);
+
+						Vue.set(that, 'tableData', arrayObj);
+						Vue.set(that, 'tables', dataList(list))
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				handleSizeChange(val) {
+					console.log(`每页`);
+					console.log(val);
+					vm.$data.pagination.pagesize = val;
+				},
+				handleCurrentChange(val) {
+					console.log(`当前页:`);
+					console.log(val);
+					vm.$data.pagination.currentPage = val;
+					const that = this;
+					const table = "asset_" + that.formInline.table;
+					const url = 'http://localhost:8081/asset/queryPerPages.do';
+
+					axios.get(url, {
+						params: {
+							collectionName: table,
+							pageSize: that.pagination.pageSize,
+							page: val
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+						console.log(resData);
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						const list = data.dataList
+						console.log(sum);
+						// 列名
+						const arrayObj = columnList(list);
+
+						console.log(arrayObj);
+						Vue.set(that, 'pagination.sum', sum);
+						Vue.set(that, 'tableData', arrayObj);
+						Vue.set(that, 'tables', dataList(list))
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				getAssetSetNameList: function() {
+					var url = "http://127.0.0.1:8081/asset/AssetNameList.do";
 					axios.get(url, {
 						params: { }
 					}).then(function(response) {
 						// console.log(response.data);
-						vm.$data.assetNameList = response.data.assetList;
+						vm.$data.assetNameList = response.data.data;
 					}).catch(function(error) {
 						console.log(error);
 					});
 				},
 				// 处理——新增某资产数据
 				handleClickUpdate: function(test) {
+					// test： 当前行数据
 					var that = this;
-					console.log(test);
 					Vue.set(this,'dialogUpdateVisible', true);
 					vm.$data.assetUpdate.id =  test._id;
 					console.log(test._id['$oid']);
 					vm.$data.forms['assertId'] = test._id['$oid'];
-					vm.$data.forms['assertSetName'] = '647台阿里索电维修test';
-					var url = "http://127.0.0.1:8081/flow/getStageForm.do";
+					vm.$data.forms['assertSetName'] = that.formInline.table;
+					var url = host + "flow/getStageForm.do";
 					axios.get(url, {
 						params: {
 							stage: that.assetUpdate.currentStage,
@@ -352,17 +388,14 @@
 					var form = vm.$data.forms;
 					var data = new FormData();
 					for (key in form) {data.append(key, form[key]);}
-					var url = 'http://127.0.0.1:8081/table/addAssertInfo.do';
+					var url = 'http://127.0.0.1:8081/asset/addAssetInfo.do';
 					axios.put(url, data).then(function(response) {
 						console.log(response);
 					}).catch(function(error) {
 						console.log(error);
 					});
-
 					console.log(this.forms);
 					vm.$data.forms = {}; //  清空数据
-					this.onSubmit();
-
 				},
 				selectAssetNameList: function() {
 
@@ -397,7 +430,7 @@
 				onSubmit: function() {
 					var that = this;
 					var table = "asset_" + that.formInline.table;
-					var url = 'http://localhost:8081/table/query.do';
+					var url = 'http://localhost:8081/asset/query.do';
 					axios.get(url, {
 						params: {
 							collectionName: table
@@ -429,7 +462,7 @@
 					form.append("charge", this.assetImportForm.charge);
 					axios({
 						method: 'post',
-						url: 'http://192.168.14.253:8081/table/uploadAssetData.do',
+						url: 'http://192.168.14.253:8081/asset/setExcel.do',
 						headers: {
 							'Content-Type': 'multipart/form-data'
 						},

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<!-- 流程设计 -->
+		<link rel="stylesheet" href="css/index.css">
+	</head>
+
+	<body>
+		<h1>流程设计</h1>
+		<div id="app">
+<!--通过json文本导入流程-->
+			<el-button style="margin: 10px auto" @click="flowImportDialogVisible = true">导入流程json</el-button>
+			<el-dialog title="输入流程json 导入，（无校验功能）" :visible.sync=flowImportDialogVisible>
+				<el-input type="textarea"
+						autosize
+						placeholder= '{"key": "value"}'
+						v-model=flowDataDemo>
+				</el-input>
+				<el-button style="margin: 10px auto" @click="importJson">提交</el-button>
+			</el-dialog>
+<!--通过json文本导入流程 end-->
+
+<!--流程信息-->
+			<el-form ref="form"  label-width="100px" style="width: 800px">
+				<el-row>
+					<el-col :span="12">
+						<el-form-item label="流程名称:" >
+							<el-input v-model="flowName" placeholder="例如： 索电维修" @blur="" style="width:200px"></el-input>
+						</el-form-item>
+					</el-col>
+					<el-col :span="12">
+						<el-form-item label="流程类型">
+							<el-select v-model="flowType" placeholder="请选择 流程类型">
+								<el-option label="报修" value="repairs"></el-option>
+								<el-option label="借还" value="jiehuan"></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="12">
+						<el-form-item label="允许批量处理">
+							<el-select v-model='ifBatch' placeholder="">
+								<el-option label="允许" value=true ></el-option>
+								<el-option label="不允许" value=false ></el-option>
+							</el-select>
+						</el-form-item>
+					</el-col>
+					<el-col :span="12">
+						<el-form-item label="流程数:" >
+							<!--<el-input v-model="count" placeholder="请输入 数字" @blur="flowCount(count)" style="width:200px"></el-input>-->
+							<el-input-number v-model="count" @change="flowCount(count)" :min="1" :max="20" label="描述文字"></el-input-number>
+						</el-form-item>
+					</el-col>
+				</el-row>
+
+			</el-form>
+<!--流程信息 end-->
+<!--流程步骤创建-->
+			<div  style="margin:18px; box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)">
+				<el-popconfirm title="确定清空内容吗？" @Confirm="resetFlow()">
+					<el-button type="warning" size="small" slot="reference" style="margin: 15px 15px 15px;">重置流程</el-button>
+				</el-popconfirm>
+				<el-steps :active="active" finish-status="success"  align-center style="margin:18px;">
+					<template v-for="n in count" >
+						<el-step class='el-step__head1'  title="步骤" @click.native="on_click_step(n)"  :description=StepName[n] style="margin-block: 18px"></el-step>
+					</template>
+				</el-steps>
+
+				<el-card class="box-card" style=" margin: 50px auto">
+					<div slot="header" class="clearfix">
+						<span>状态：{{flag}}
+							<el-button  type="primary" style="margin-left:50px;padding: 10px 10px" @click=next_step() :disabled=flagAlter>下一步</el-button>
+						</span>
+					</div>
+					<div class="text item">
+						<!--列表-->
+						<el-form ref="form"  label-width="80px" style="margin-bottom: 12px;">
+							<div style="margin:18px auto; ">
+								<el-form-item label="流程步骤" >
+									<el-input v-model="stageItem.flowStepName" placeholder="请输入 该步骤名称" style="width:200px"></el-input>
+								</el-form-item>
+								<el-form-item label="处理人">
+									<el-select v-model='stageItem.handle_id' placeholder="请选择 处理人"  style="width:200px">
+										<el-option label="小王" value="600e7022a092642696fa10a9"></el-option>
+										<el-option label="李四" value="jiehuan"></el-option>
+									</el-select>
+								</el-form-item>
+<!--流程步骤创建 end-->
+<!--								<el-button  type="success" style="margin-left:50px;padding: 10px 10px"  :disabled=!flagAlter>提交</el-button>-->
+<!--新增域名-->
+								<el-button @click="addDomain" style="margin: 15px">新增资产属性</el-button>
+								<el-form  ref="dynamicValidateForm" label-width="100px" class="demo-dynamic">
+									<template v-for="(domain, index) in stageItem.domains">
+										<div style="width: 800px">
+											<el-row>
+												<el-col :span="12">
+													<el-form-item :label="'中文名-' + index"
+																  :key="domain.key" :prop="'domains.' + index + '.chineseName'">
+														<el-input v-model="domain.chineseName"  style="width:200px"></el-input>
+													</el-form-item>
+												</el-col>
+												<el-col :span="12">
+													<el-form-item :label="'字典名-' + index"  :key="domain.key" :prop="'domains.' + index + '.value'">
+														<el-input v-model="domain.value"  style="width:200px" placeholder="填写对应英文标识"></el-input>
+														<el-button @click.prevent="removeDomain(domain)">删除</el-button>
+													</el-form-item>
+												</el-col>
+											</el-row>
+										</div>
+
+									</template>
+
+									<el-form-item>
+
+										<el-button  type="success" style="margin-left:40px;padding: 10px 10px"  :disabled=!flagAlter>提交</el-button>
+										<el-button  type="message" style="margin-left:40px;padding: 10px 10px"
+													:disabled=!flagAlter @click="exportJson">导出流程json文件</el-button>
+										<!--<el-button @click="resetForm('dynamicValidateForm')">重置</el-button>-->
+									</el-form-item>
+								</el-form>
+<!--新增域名-end-->
+							</div>
+
+						</el-form>
+					</div>
+				</el-card>
+
+
+
+			</div>
+
+
+		</div>
+	</body>
+	<style>
+		.el-step__head1:hover {
+			color: #67c23a;
+			margin: 18px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);
+		}
+
+	</style>
+	<!-- import Vue before Element -->
+	<script type="text/javascript" src="js/axios.js"></script>
+	<script type="text/javascript" src="js/vue.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+	<!-- import JavaScript -->
+	<script>
+
+		var array = [];
+
+		var flowDesign = new Vue({
+			el: "#app",
+			data: {
+
+				flowName: '',     // 某阶段的资产属性
+				flowType: '',     // 资产类型
+				ifBatch: 'false', //是否批量处理
+
+				stageItem: {
+					index: 0,
+					flowStepName: '',
+					handle: '',
+					handle_id: '',
+					domains: [{
+						chineseName: '',
+						value: ''
+					}]
+				},
+
+				stageForm: [{
+					count: 0
+				}], // 存储 表单
+				StepName:["index0"],
+
+				count: 3,			// 步骤总数
+				active: 0,          /* 当前活跃的步骤*/
+				message: '下一步',
+				flag: '创建',
+				flagAlter: false,   // false : 新建步骤； true : 修改步骤
+				flowImportDialogVisible: false,
+				flowDataDemo : ''
+
+			},
+			methods: {
+				// 表单json 提交服务器
+				importJson() {
+					let form = this.flowDataDemo;
+					axios({
+						method: 'put',
+						url: 'http://192.168.14.253:8081/flow/asset.do',
+						headers: {
+							'Content-Type': 'application/json'
+						},
+						data: form
+					}).then(res => {
+						console.log(res);
+						this.$notify({
+							title: '成功',
+							message: '成功导入流程： ' + res.data,
+							type: 'success'
+						});
+					})
+				},
+				exportJson() {
+					console.log("exportJson");
+					console.log(this.$data);
+				},
+				removeDomain(item) {
+					console.log('removeDomain');
+					const index = this.stageItem.domains.indexOf(item);
+					console.log(index);
+					if(index !== -1) {
+						this.stageItem.domains.splice(index, 1);
+					}
+				},
+				addDomain() {  // 增加资产属性
+					console.log("addDomain");
+					if (this.flagAlter == false) {
+						this.stageItem.domains.push({
+							key: Date.now()
+						});
+					}
+				},
+				on_click_step(n) {
+					console.log('on_click_step' + n + this.flagAlter);
+					if(this.flagAlter == true){
+						this.active = n;
+						this.stageItem = this.stageForm[n];
+						this.flag = '修改步骤'+ this.stageItem.flowStepName;
+						this.StepName[n] = this.stageItem.flowStepName;
+					}
+				},
+				resetFlow: function() {
+					console.log('resetFlow');
+					this.stageForm = [{}];
+					this.active = 0;
+				},
+				flowCount: function(sum) {
+					console.log(sum);
+					flowDesign.$data.count = Number(sum);
+				},
+				next_step() {
+					console.log('next_step');
+					let index = Number(this.active); // 当前活跃的结点
+					if (this.flagAlter == false) {
+						index++;
+					}
+					console.log(index);
+					this.stageItem.index = index;
+					this.stageForm[index] = JSON.parse(JSON.stringify(this.stageItem)); // 加入表单中
+					this.StepName[index] = this.stageItem.flowStepName; // 保存流程名称
+
+
+					if (++this.active >= this.count) {
+						this.active = this.count;  // 不更改
+						this.flag = '修改中';
+						this.flagAlter = true;
+					}
+				},
+
+			}
+		})
+	</script>
+
+</html>

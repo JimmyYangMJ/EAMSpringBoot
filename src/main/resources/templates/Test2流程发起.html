@@ -1,0 +1,307 @@
+<!--查询资产数据-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="css/index.css">
+
+	</head>
+
+	<body>
+		<div id="app">
+			<el-badge :value=pagination.sum style="margin: 20px" class="item">
+				<el-button size="small">待处理</el-button>
+			</el-badge>
+
+			<div id="appcenter">
+				<!--查询资产 选项-->
+				<el-form :inline="true"  class="demo-form-inline">
+					<el-form-item label="资产类型">
+						<el-select v-model="formInline.table" placeholder="资产表" @click.native="getAssetSetNameList" filterable>
+							<template v-for="(v, k, index) in formInline.assetNameList">
+								<el-option :label=v :value=v> </el-option>
+							</template>
+						</el-select>
+					</el-form-item>
+					<el-form-item>
+						<el-button type="primary" @click="handlePaginationInit">查询</el-button>
+					</el-form-item>
+					<!--查询资产 选项-->
+					<el-form :inline="true"  class="demo-form-inline">
+						<el-form-item label="选择流程">
+							<el-select v-model="formFlowInline.table" placeholder="选择流程" @click.native="getFlowNameList" filterable>
+								<template v-for="(v, k, index) in formFlowInline.flowNameList">
+									<el-option :label=v :value=v> </el-option>
+								</template>
+							</el-select>
+						</el-form-item>
+						<el-form-item>
+							<el-button type="primary" @click="flowBindAsset">流程发起</el-button>
+						</el-form-item>
+					</el-form>
+				</el-form>
+				<!--查询资产 选项 end-->
+
+				<div class="boxShadow">
+					<div style="margin-top: 20px">
+						<!-- 数据表格-->
+						<el-table id='tableExcel' :data="tables" ref="multipleTable" style="width: 100%" @selection-change='selectArInfo'>
+							<el-table-column type="selection" width="45px"></el-table-column>
+							<el-table-column fixed label="序号" width="62px" type="index"></el-table-column>
+							<template v-for='(col) in tableData'>
+								<el-table-column sortable :show-overflow-tooltip="true" :prop="col.dataItem" :label="col.dataTable" :key="col.dataItem" width="124px">
+								</el-table-column>
+							</template>
+							<el-table-column fixed="right" label="操作" width="100">
+								<template slot-scope="scope">
+									<el-button @click="handleClickUpdate(scope.row)" type="text" size="small">处 理</el-button>
+									<el-button type="text" size="small">详 情</el-button>
+								</template>
+							</el-table-column>
+							<!--隐藏资产id-->
+							<el-table-column fixed label="id" width="62px" type="index" v-if=false></el-table-column>
+						</el-table>
+						<!-- 数据表格 end-->
+						<!--分页-->
+						<div class="block">
+							<el-pagination
+									@size-change="handleSizeChange"
+									@current-change="handleCurrentChange"
+									:current-page= pagination.currentPage
+									:page-sizes="[10, 20, 50, 100, 200]"
+									:page-size="10"
+									layout="total, sizes, prev, pager, next, jumper"
+									:total=pagination.sum>
+							</el-pagination>
+						</div>
+						<!--分页 end-->
+
+
+						<!-- 资产操作 模态框 -->
+						<el-dialog title="资产处理"  :visible.sync="dialogUpdateVisible">
+
+						</el-dialog>
+						<!-- 资产操作 end-->
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<style>
+		.item {
+			margin-top: 10px;
+			margin-right: 40px;
+		}
+	</style>
+	<script type="text/javascript" src="js/vue.js"></script>
+	<script type="text/javascript" src="js/axios.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="js/dataJson/dataMap.js"></script>
+	<script type="text/javascript" src="js/FileSaver.js"></script>
+	<script type="text/javascript" src="js/xlsx.core.min.js"></script>
+
+	<script>
+
+		function columnList(obj) {
+			console.log("columnList:");
+			let set = new Set();
+			for(let item in obj) {
+				let arr = Object.keys(obj[item].data);
+				for(let i in arr) {
+					console.log();
+					set.add(arr[i])
+				}
+			}
+			let array = Array.from(set);
+			let map = dataDictionary; // 数据字典
+			let arrayObj = [];
+			for(i in array) {
+				let column = {
+					dataItem: "",
+					dataTable: ""
+				};
+				column.dataItem = array[i];
+				column.dataTable = map[array[i]]; // 根据英文 获取中文 列名
+				arrayObj.push(column);
+			}
+			console.log(arrayObj);
+			return arrayObj
+		}
+
+		// 获取列名 对应数据
+		function dataList(obj) {
+			console.log("dataList:");
+			console.log(obj);
+			let arrayObj = [];
+			for(let item in obj) {
+				obj[item].data._id = obj[item]._id;
+				arrayObj.push(obj[item].data);
+			}
+
+			return arrayObj;
+		}
+
+		const host = "http://127.0.0.1:8081/";
+		var assetTableVue = new Vue({
+			el: "#app",
+			data: {
+				userName: "",
+				isCollapse : true,
+				assetImportForm: {
+					assetName: '',
+					department: '', // 数组尾部为最终结果
+					charge: '' // 数组
+				},
+				assetHandle: {
+					id: ''
+				},
+				tables: [],    // 表格数据
+				tableData: [], // 列名
+				pagination: {
+					pageSize: 10,
+					sum: 0,
+					currentPage: 1
+				},
+				message: "未上传",
+				formInline: {  // 查询表单
+					table: '', // 选中表
+					assetNameList: [] // 表集合
+				},
+				formFlowInline: {  // 查询表单
+					table: '', // 选中流程
+					flowNameList: [] // 表集合
+				},
+				dialogFormVisible: false,
+				dialogUpdateVisible: false
+			},
+			methods: {
+				// 获取表格选中时的数据
+				selectArInfo: function(val) {
+					this.selectArr = val;
+					console.log(this.selectArr);
+				},
+				getAssetSetNameList: function() {
+					const url = host + "asset/AssetNameList.do";
+					const that = this;
+					axios.get(url, {
+						params: { }
+					}).then(function(response) {
+						that.formInline.assetNameList = response.data.data;
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				getFlowNameList: function() {
+					const url = host + "flow/allName.do";
+					const that = this;
+					axios.get(url, {
+						params: { }
+					}).then(function(response) {
+						assetTableVue.$data.formFlowInline.flowNameList = response.data.data;
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				// 资产 绑定 流程数据
+				flowBindAsset(){
+					const assetSetName = this.formInline.table;
+					const flowName = this.formFlowInline.table;
+					const url = host + 'asset/flowBind.do';
+					console.log(assetSetName)
+					console.log(flowName);
+					axios.get(url, {
+						params: {
+							assetSetName: assetSetName,
+							flowName: flowName
+						}
+					}).then(function(response) {
+						console.log(response.data.data);
+					}).catch(function(error) {
+						console.log(error);
+					});
+
+					this.$message({
+						message: '流程发起 成功',
+						type: 'success'
+					});
+				},
+				handlePaginationInit(){
+					const that = this;
+					const table = "asset_" + that.formInline.table;
+					const url = host + 'asset/queryPerPages.do';
+					axios.get(url, {
+						params: {
+							collectionName: table,
+							pageSize: that.pagination.pageSize,
+							page: that.pagination.currentPage,
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						assetTableVue.$data.pagination.sum = sum;
+						const list = data.dataList
+						// 列名
+						const arrayObj = columnList(list);
+
+						Vue.set(that, 'tableData', arrayObj);
+						Vue.set(that, 'tables', dataList(list))
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				handleSizeChange(val) {
+					console.log(`每页`);
+					console.log(val);
+					assetTableVue.$data.pagination.pagesize = val;
+				},
+				handleCurrentChange(val) {
+					console.log(`当前页:`);
+					console.log(val);
+					this.pagination.currentPage = val;
+					const that = this;
+					const table = "asset_" + that.formInline.table;
+					const url = 'http://localhost:8081/asset/queryPerPages.do';
+
+					axios.get(url, {
+						params: {
+							collectionName: table,
+							pageSize: that.pagination.pageSize,
+							page: val
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						const list = data.dataList
+
+						// 列名
+						const arrayObj = columnList(list);
+
+						assetTableVue.$data.pagination.sum = sum;
+						assetTableVue.$data.tableData = arrayObj;
+						assetTableVue.$data.tables = dataList(list);
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				// 数据处理
+				handleClickUpdate: function(test) {
+					console.log(test);
+					const _id = test._id.$oid;
+					this.dialogUpdateVisible = true;
+					this.assetHandle.id = _id;
+
+				},
+			}
+		})
+	</script>
+
+</html>

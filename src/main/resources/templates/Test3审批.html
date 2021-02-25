@@ -1,0 +1,430 @@
+<!--查询资产数据-->
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="css/index.css">
+
+	</head>
+
+	<body>
+		<div id="app">
+			<el-badge :value=pagination.sum style="margin: 20px" class="item">
+				<el-button size="small">待 处理</el-button>
+			</el-badge>
+
+			<div id="appcenter">
+
+<!--当前登陆用户-->
+				<el-form :inline="true">
+					<el-form-item label="当前 登陆用户">
+						<el-select v-model="userName" placeholder="用户">
+							<el-option label="小王" value="小王"></el-option>
+							<el-option label="员工2" value="员工2"></el-option>
+							<el-option label="员工3" value="员工3"></el-option>
+							<el-option label="员工4" value="员工4"></el-option>
+							<el-option label="员工5" value="员工5"></el-option>
+						</el-select>
+					</el-form-item>
+				</el-form>
+<!--当前登陆用户 end -->
+
+<!--查询资产 选项-->
+				<el-form :inline="true"  class="demo-form-inline">
+					<el-form-item label="资产类型">
+						<el-select v-model="formInline.table" placeholder="资产表" @click.native="getAssetSetNameList" filterable>
+							<template v-for="(v, k, index) in formInline.assetNameList">
+								<el-option :label=v :value=v> </el-option>
+							</template>
+						</el-select>
+					</el-form-item>
+					<el-form-item>
+						<el-button type="primary" @click="handlePaginationInit">查询</el-button>
+					</el-form-item>
+				</el-form>
+<!--查询资产 选项 end-->
+
+				<div class="boxShadow">
+					<div style="margin-top: 20px">
+						<!-- 数据表格-->
+						<el-table id='tableExcel' :data="tables" ref="multipleTable" style="width: 100%" @selection-change='selectArInfo'>
+							<el-table-column type="selection" width="45px"></el-table-column>
+							<el-table-column fixed label="序号" width="62px" type="index"></el-table-column>
+							<template v-for='(col) in tableData'>
+								<el-table-column sortable :show-overflow-tooltip="true" :prop="col.dataItem" :label="col.dataTable" :key="col.dataItem" width="124px">
+								</el-table-column>
+							</template>
+							<el-table-column fixed="right" label="操作" >
+								<template slot-scope="scope" >
+									<el-button @click="handleClickUpdate(scope.row)" type="text" size="small">处 理</el-button>
+									<el-button type="text" size="small" >详 情</el-button>
+								</template>
+							</el-table-column>
+							<!--隐藏资产id-->
+							<el-table-column fixed label="id" width="62px" type="index" v-if=false></el-table-column>
+						</el-table>
+						<!-- 数据表格 end-->
+						<!--分页-->
+						<div class="block">
+							<el-pagination
+									@size-change="handleSizeChange"
+									@current-change="handleCurrentChange"
+									:current-page= pagination.currentPage
+									:page-sizes="[10, 20, 50, 100, 200]"
+									:page-size="10"
+									layout="total, sizes, prev, pager, next, jumper"
+									:total=pagination.sum>
+							</el-pagination>
+						</div>
+						<!--分页 end-->
+
+
+						<!-- 资产操作 模态框 -->
+						<el-dialog title="资产处理"  :visible.sync="dialogUpdateVisible">
+
+							<div style="margin: 20px">当前资产类型：{{formInline.table}}</div>
+							<div style="margin: 20px">当前资产id：{{assetHandle.id}}</div>
+							<div style="margin: 20px">所属流程  :  {{currentFlowStatus.flow}}</div>
+							<div style="margin: 20px">当前阶段  :  {{currentFlowStatus.currentStage}}</div>
+							<el-card shadow="always">
+								<div>新增资产属性</div>
+								<div style="margin: 20px">
+									<el-form ref="form" label-width="auto">
+										<template v-for='(v, k, index) in assetHandle.domains' >
+											<el-form-item  :label=v["chineseName"]   style="width: 800px">
+												<el-input  type="text" v-model="assetHandle.domains[k].value" style="width: 100px"></el-input>
+											</el-form-item>
+										</template>
+									</el-form>
+								</div>
+							</el-card>
+							<div style="margin: 20px">下一阶段 {{currentFlowStatus.nextStage}}</div>
+
+							<!--查询资产 选项-->
+							<el-button type="primary" @click="flowBindAsset">同意处理</el-button>
+						</el-dialog>
+						<!-- 资产操作 end-->
+
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+	<style>
+		.item {
+			margin-top: 10px;
+			margin-right: 40px;
+		}
+	</style>
+	<script type="text/javascript" src="js/vue.js"></script>
+	<script type="text/javascript" src="js/axios.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+	<script type="text/javascript" src="js/dataJson/dataMap.js"></script>
+	<script type="text/javascript" src="js/FileSaver.js"></script>
+	<script type="text/javascript" src="js/xlsx.core.min.js"></script>
+
+	<script>
+
+		// json 转 dataItem  dataTable
+
+		function columnList(obj) {
+			console.log("columnList:");
+			let set = new Set();
+			for(let item in obj) {
+				let arr = Object.keys(obj[item].data);
+				for(let i in arr) {
+					console.log();
+					set.add(arr[i])
+				}
+			}
+			let array = Array.from(set);
+			let map = dataDictionary; // 数据字典
+			let arrayObj = [];
+			for(i in array) {
+				let column = {
+					dataItem: "",
+					dataTable: ""
+				};
+				column.dataItem = array[i];
+				column.dataTable = map[array[i]]; // 根据英文 获取中文 列名
+				arrayObj.push(column);
+			}
+			console.log(arrayObj);
+			return arrayObj
+		}
+
+		// 获取列名 对应数据
+		function dataList(obj) {
+			console.log("dataList:");
+			console.log(obj);
+			let arrayObj = [];
+			for(let item in obj) {
+				obj[item].data._id = obj[item]._id;
+				arrayObj.push(obj[item].data);
+			}
+
+			return arrayObj;
+		}
+
+		const host = "http://127.0.0.1:8081/";
+		var assetTableVue = new Vue({
+			el: "#app",
+			data: {
+				userName: '',
+				isCollapse : true,
+				assetImportForm: {
+					assetName: '',
+					department: '', // 数组尾部为最终结果
+					charge: '' // 数组
+				},
+				assetHandle: { // 新增资产信息
+					id: '' ,
+					domains: []
+				},
+				tables: [],    // 表格数据
+				tableData: [], // 列名
+				pagination: {
+					pageSize: 10,
+					sum: 0,
+					currentPage: 1
+				},
+				message: "未上传",
+				formInline: {  // 查询表单
+					table: '', // 选中流程 当前资产类型
+					assetNameList: [] // 表集合
+				},
+				dialogFormVisible: false,
+				dialogUpdateVisible: false,
+				currentFlowStatus: {
+					// Data.currentStage // 当前阶段
+					// Data.flow  // 所属流程
+					// Data.pendingStaff // 送处理人员
+					// Data.nextStage// 下一阶段
+				}
+			},
+			methods: {
+				// 获取表格选中时的数据
+				selectArInfo: function(val) {
+					this.selectArr = val;
+					console.log(this.selectArr);
+				},
+				getAssetSetNameList: function() {
+					console.log("getAssetSetNameList")
+					const url = host + "asset/AssetNameList.do";
+					const that = this;
+					axios.get(url).then(function(response) {
+						// Vue.set(that, 'formInline.assetNameList', response.data.data)
+						that.formInline.assetNameList = response.data.data;
+						console.log(response.data.data);
+					}).catch(function(error) {
+						console.log(error);
+					});
+					console.log("getAssetSetNameList -end");
+				},
+				// 提交 新增资产 数据
+				flowBindAsset(){
+					var that = this;
+					/**
+					 assetHandle: { // 新增资产信息
+						id: '' ,
+						domains: [],
+						assetSetName: 资产表名
+					},
+					 * @type {{domains: [], id: string}|{id: string}|{id: string}|*}
+					 */
+					const assetForm = Object.create(this.assetHandle);
+					assetForm.assetSetName = this.formInline.table;
+
+					var data = new FormData();
+					data.append("assetSetName", assetForm.assetSetName);
+					data.append("assetId", assetForm.id);
+					for (let index in assetForm.domains) {
+						console.log("************");
+						console.log(assetForm.domains[index]);
+						data.append(assetForm.domains[index].key, assetForm.domains[index].value);
+					}
+					var url = host + 'asset/addAssetInfo.do';
+					axios.put(url, data).then(function(response) {
+						console.log(response);
+					}).catch(function(error) {
+						console.log(error);
+					});
+					this.$message({
+						message: "处理成功",
+						type: 'success'
+					});
+					this.dialogUpdateVisible = false;
+
+					url = host + "asset/getStageForm.do";
+					console.log("stage" + assetTableVue.$data.currentFlowStatus.nextStage);
+					axios.get(url, {
+						params: {
+							stage: assetTableVue.$data.currentFlowStatus.nextStage,
+							flow: assetTableVue.$data.currentFlowStatus.flow
+						}
+					}).then(function(response) {
+						console.log("*****************");
+
+						var data = response.data.data;
+
+						console.log(data);
+
+						var pendingStaff = data['handler_id'];
+						var currentStage = assetTableVue.$data.currentFlowStatus.nextStage
+						data = new FormData();
+						data.append("assetSetName", assetForm.assetSetName);
+						data.append("assetId", assetForm.id);
+						data.append("pendingStaff", pendingStaff);
+						data.append("currentStage", currentStage);
+
+						console.log("---currentStage--" +  currentStage +  assetForm.assetSetName + assetForm.id
+								 + pendingStaff +"-----");
+						// 更新资产 状态
+						url = host + 'asset/currentFlowStatus.do';
+						axios.put(url, data).then(function(response) {
+							console.log(response);
+						}).catch(function(error) {
+							console.log(error);
+						});
+						assetTableVue.$message({
+							message: "更新成功",
+							type: 'success'
+						});
+						that.$options.methods.handlePaginationInit();
+
+					}).catch(function(error) {
+						console.log(error);
+					});
+
+					console.log(assetForm);
+
+				},
+				handlePaginationInit(){
+					assetTableVue.$message({
+						message: "查询成功",
+						type: 'success'
+					});
+					console.log(assetTableVue.$data.formInline.table);
+					const url = host + '/asset/individualHandle.do';
+					axios.get(url, {
+						params: {
+							assetSetName: assetTableVue.$data.formInline.table,
+							pageSize: assetTableVue.$data.pagination.pageSize,
+							page: assetTableVue.$data.pagination.currentPage,
+							staffName: assetTableVue.$data.userName
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						console.log(data.sum)
+
+						if (sum == 0) {
+							assetTableVue.$message({
+								message: '没有数据',
+								type: 'warning'
+							});
+						}
+						assetTableVue.$data.pagination.sum = sum;
+						const list = data.dataList
+						// 列名
+						const arrayObj = columnList(list);
+						assetTableVue.$data.tableData = arrayObj;
+						assetTableVue.$data.tables = dataList(list);
+						// Vue.set(that, 'tableData', arrayObj);
+						// Vue.set(that, 'tables', dataList(list))
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				handleSizeChange(val) {
+					console.log(`每页`);
+					console.log(val);
+					assetTableVue.$data.pagination.pagesize = val;
+				},
+				handleCurrentChange(val) {
+					console.log(`当前页:`);
+					console.log(val);
+					this.pagination.currentPage = val;
+					const that = this;
+					const table = "asset_" + that.formInline.table;
+					const url = 'http://localhost:8081/asset/queryPerPages.do';
+
+					axios.get(url, {
+						params: {
+							collectionName: table,
+							pageSize: that.pagination.pageSize,
+							page: val
+						}
+					}).then(function(response) {
+
+						const resData = response.data;
+
+						const data = resData.data; // 查询的数据
+
+						const sum = data.sum;
+						const list = data.dataList
+
+						// 列名
+						const arrayObj = columnList(list);
+
+						assetTableVue.$data.pagination.sum = sum;
+						assetTableVue.$data.tableData = arrayObj;
+						assetTableVue.$data.tables = dataList(list);
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+				// 数据处理
+				handleClickUpdate: function(test) {
+					this.dialogUpdateVisible = true;
+					console.log(test);
+					const _id = test._id.$oid;
+					this.assetHandle.id = _id;
+					const assetSet = this.formInline.table;
+
+
+       				// 获取 某 当前状态信息
+					let url = host + "asset/assetItem.do";
+					axios.get(url, {
+						params: {
+							assetId: _id,
+							assetSetName: assetSet
+						}
+					}).then(function(response) {
+
+						let Data = response.data.data.currentFlowStatus;
+						console.log(Data);
+						assetTableVue.$data.currentFlowStatus = Data;
+
+                        // 查询对应 状态的 流程信息
+						let flows = assetTableVue.$data.currentFlowStatus.flow;
+						let stages = assetTableVue.$data.currentFlowStatus.currentStage;
+						url = host + "asset/getStageForm.do";
+						axios.get(url, {
+							params: {
+								stage: stages,
+								flow: flows
+							}
+						}).then(function(response) {
+
+							console.log(response.data.data.domains);
+							assetTableVue.$data.assetHandle.domains = response.data.data.domains;
+
+
+						}).catch(function(error) {
+							console.log(flows + " :** " + stages);
+							console.log(error);
+						});
+					}).catch(function(error) {
+						console.log(error);
+					});
+				},
+			}
+		})
+	</script>
+
+</html>
