@@ -124,7 +124,7 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
         FindIterable<Document> documents;
         if (queryKey.equals("_id")) {
-             documents = collection.find()
+            documents = collection.find()
                     .filter(new Document("_id", new ObjectId(queryValue)))
                     .projection(
                             new Document(keyName, 1).append("_id", 0)

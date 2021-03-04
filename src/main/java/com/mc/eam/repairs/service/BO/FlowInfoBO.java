@@ -1,7 +1,5 @@
 package com.mc.eam.repairs.service.BO;
 
-import jdk.nashorn.internal.runtime.regexp.joni.constants.StringType;
-
 import java.util.Date;
 
 /**
