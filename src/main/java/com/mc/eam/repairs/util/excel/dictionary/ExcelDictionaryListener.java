@@ -15,7 +15,9 @@ import java.util.Map;
  */
 @Component
 public class ExcelDictionaryListener extends AnalysisEventListener<Map<Integer, String>> {
+
     public static HashMap<String, ArrayList<String>> dictionaryMap = new HashMap<>();
+
     static Map headMap;
 
     @Override

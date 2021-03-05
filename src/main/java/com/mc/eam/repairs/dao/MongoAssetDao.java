@@ -23,20 +23,22 @@ public interface MongoAssetDao {
      * @return
      * @throws IllegalAccessException
      */
-    <T> boolean insert(Object objectBean, String objKey) throws IllegalAccessException;
+    <T> boolean insert(String collectionName, Object objectBean, String objKey) throws IllegalAccessException;
+
+//    /**
+//     *  查看当前数据库 某类型 数据表/ collection
+//     * @param type 类型 assert：资产
+//     * @return
+//     */
+//    Set selectContainCollection(String type);
+
 
     /**
-     *  查看当前数据库 某类型 数据表/ collection
-     * @param type 类型 assert：资产
+     * 查看当前所有资产数据集合 list
+     * @param isDelete 是否暂时删除
      * @return
      */
-    Set selectContainCollection(String type);
-
-    /**
-     *  查看当前所有资产数据集合 list
-     * @return
-     */
-    List<String> selectAssetSetNameList();
+    List<String> selectAssetSetNameList(boolean isDelete);
 
     /**
      *  指定资产 插入 data 数据 (key 相同时 更新  value)

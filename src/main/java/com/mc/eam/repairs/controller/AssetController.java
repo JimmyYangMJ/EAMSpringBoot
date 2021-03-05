@@ -8,6 +8,7 @@ import com.mc.eam.repairs.dao.impl.MongoUtilDaoImpl;
 import com.mc.eam.repairs.service.impl.AssetBizImpl;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,15 +33,10 @@ public class AssetController {
 
     @ApiOperation(value = "测试用", notes = "这是测试用的")
     @GetMapping("test.do")
-    public ServerResponse<List> test(String key){
-        if (key == null) {
-            return ServerResponse.createBySuccess(mongoUtilDao.findUniqueIndex("flow",null));
-        }else {
-            HashMap<String, String> hashMap = new HashMap<>();
-            hashMap.put("name",key);
-            return ServerResponse.createBySuccess(mongoUtilDao.findUniqueIndex("flow", hashMap));
-        }
-
+    public ServerResponse<Object> test(){
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("_id", "60418d337e6703294ab27b31");
+        return ServerResponse.createBySuccess(mongoUtilDao.findValue("dataDictionary",hashMap,"asset_statistics"));
     }
 
     /**
@@ -50,26 +46,37 @@ public class AssetController {
      * @param requestParameter 请求体
      * @return 结果
      */
+    @ApiOperation(value = "上传原始数据Set", notes = "上传 Excel 文档")
     @PostMapping("setExcel.do")
     public ServerResponse<String> uploadAssetData(MultipartFile file, String assetSetName,
                                   HttpServletRequest requestParameter) throws Exception {
 
         requestParameter.setAttribute("ContentType", "multipart/form-data");
-        // todo response 设置
         Map parameterMap = requestParameter.getParameterMap();
         if (file.isEmpty()) {
-            return ServerResponse.createByErrorMessage("上传失败，请选择文件");
+            return ServerResponse.createByNullMessage("上传失败，请选择文件");
         }
         // todo 保存文件 fileBiz.saveFile(file);
 
-        /**  新增的数据表 document 是否存在 */
-        if (assetBiz.containAssetName(assetSetName)){
+        /** 新增的数据表 document 是否存在 */
+        if (assetBiz.containAssetSetName(assetSetName)){
             return ServerResponse.createByErrorMessage("资产数据表已存在");
         }else {
-            /** 创建collection （不存在会自动创建）并 存入数据库*/
+            /** 创建collection（不存在会自动创建）并 存入数据库*/
             assetBiz.excelToMongo(file, assetSetName, parameterMap);
             return  ServerResponse.createBySuccessMessage("已新建资产数据表");
         }
+    }
+
+    // todo 查询某Set资产 字典序列 array
+
+    /**
+     * 查询当前已有的资产集合名称
+     * @return 没有被删的资产Set List
+     */
+    @GetMapping(value = "setNameList.do")
+    public ServerResponse<List<String>> queryAssetSetNameList() {
+        return ServerResponse.createBySuccess(assetBiz.queryAssetSetList(true));
     }
 
     /**
@@ -81,7 +88,6 @@ public class AssetController {
     @ApiOperation(value = "删除资产集合数据", notes = "***")
     @DeleteMapping(value = "set.do")
     public ServerResponse deleteAssetSet(String assetSetName, boolean isForever) {
-        System.out.println(isForever);
         return assetBiz.deleteAssetSet(assetSetName, isForever);
     }
 
@@ -105,7 +111,7 @@ public class AssetController {
     }
 
     /**
-     * 根据表名 查询
+     * 根据表名 查询 所有数据
      * @param collectionName 表名 eg:asset_647台阿里索电维修test
      * @return todo test
      */
@@ -127,15 +133,6 @@ public class AssetController {
     }
 
     /**
-     * 查询当前已有的资产集合名称
-     * @return todo
-     */
-    @GetMapping(value = "AssetNameList.do")
-    public ServerResponse<List<String>> queryAssetNameList() {
-        return ServerResponse.createBySuccess(mongoAssetDao.selectAssetSetNameList());
-    }
-
-    /**
      * todo 资产流程发起
      * @param assetSetName  资产表名称 eg 647台阿里索电维修3
      * @param flowName 流程名称 eg 阿里索电维修
@@ -145,10 +142,6 @@ public class AssetController {
     public ServerResponse<String> assetFlowStart(String assetSetName, String flowName) {
         return ServerResponse.createBySuccess("success",assetBiz.AssetFlowStart(assetSetName, flowName));
     }
-
-    // todo 更新资产状态数据
-    // 1 当前阶段，2. 下一阶段， 3. 处理人员 ***
-
 
     // todo 查询 个人 待处理事件 currentFlowStatus.pendingStaff ==
 
@@ -196,8 +189,10 @@ public class AssetController {
     // 更新当前阶段信息
     @GetMapping(value = "assetItem.do")
     public ServerResponse<JSONObject> assetItem(String assetSetName, String assetId) {
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("_id", assetId);
         return ServerResponse.createBySuccess(
-                mongoUtilDao.findValue("currentFlowStatus", "_id", assetId, "asset_" + assetSetName));
+                mongoUtilDao.findValue("currentFlowStatus", hashMap , "asset_" + assetSetName));
     }
 
     // todo 查询 需要填写 的表项
@@ -211,7 +206,9 @@ public class AssetController {
     public ServerResponse<JSONObject> getStageInfo(@RequestParam("stage") String stageName,
                                @RequestParam("flow") String flowName ) {
 
-        JSONObject jsonObject = mongoUtilDao.findValue("stage", "stage.flowStepName", stageName, "flow");
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("stage.flowStepName", stageName);
+        JSONObject jsonObject = mongoUtilDao.findValue("stage", hashMap, "flow");
         JSONArray jsonArray = jsonObject.getJSONArray("stage");
         for (Object j: jsonArray) {
             JSONObject jo = (JSONObject) j;

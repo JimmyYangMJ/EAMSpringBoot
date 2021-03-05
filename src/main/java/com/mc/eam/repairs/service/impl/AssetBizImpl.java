@@ -24,6 +24,7 @@ import java.io.*;
 import java.util.*;
 
 /**
+ * 资产相关操作
  * @author ymj
  * @Date： 2021/1/25 17:37
  * @description: 文件处理
@@ -76,17 +77,20 @@ public class AssetBizImpl implements AssetBiz {
     @Override
     public boolean excelToMongo(MultipartFile mFile, String assetSetName, Map requestMap) throws Exception {
         // 更新 数据表名/document
-        mongoAssetDao.collectionName = "asset_" + assetSetName;
 
         File file = FileUtil.multipartFileToFile(mFile);
+
+        excelListener.setCollectionName("asset_" + assetSetName);
         EasyExcel.read(file, excelListener).sheet("Sheet1").doRead();
 
         /** 更新资产统计表 asset_statistics
-         *    name : 647台阿里索电维修
+         *   assetSetName : 647台阿里索电维修
+         *   isDelete ： false / null
              department：部门
              charge：负责人
              count：数量
              default_flow： 默认流程
+            todo 增加资产属性 数组 ：dataDictionary
          */
         Document document = new Document();
         document.put("count", mongoAssetDao.selectDocumentCount(null, "asset_" + assetSetName));
@@ -96,6 +100,14 @@ public class AssetBizImpl implements AssetBiz {
             document.put(entry.getKey(), entry.getValue()[0]);
         }
         mongoAssetDao.updateAssetStatistics(document, assetSetName, null);
+
+        // 更新 asset_statistics ，数据字典数组数据
+        HashMap<String, Object> filters = new HashMap<>();
+        filters.put("assetSetName", assetSetName);
+        System.out.println(mongoUtilDao.updateDocumentValue("dataDictionary",
+                excelListener.getDataDictionaryArray(), filters,
+                "asset_statistics"));
+
         return true;
     }
 
@@ -131,13 +143,13 @@ public class AssetBizImpl implements AssetBiz {
     }
 
     /**
-     * 查询 某 资产表是否存在
+     * 查询 某 资产表 是否存在, 包括 isDelete = true
      * @param assetSetName
      * @return
      */
     @Override
-    public boolean containAssetName(String assetSetName){
-        return  mongoAssetDao.selectContainCollection("asset").contains(assetSetName);
+    public boolean containAssetSetName(String assetSetName){
+        return  mongoAssetDao.selectAssetSetNameList(true).contains(assetSetName);
     }
 
     @Override
@@ -218,14 +230,16 @@ public class AssetBizImpl implements AssetBiz {
         return ServerResponse.createBySuccess(ResponseCode.SUCCESS.getDesc());
     }
 
-    // todo
+
+    /**
+     * 查询资产set数据名 List
+     * @param notDelete 是否删除，一般为 true
+     * @return
+     */
     @Override
-    public List<String> queryAssetSetList(String assetSetName, boolean containIsDelete) {
-        // 查询 资产名称对应的 id
+    public List<String> queryAssetSetList(boolean notDelete) {
 
-
-//        mongoUtilDao.findNameList("asset_statistics",)
-        return null;
+        return  mongoAssetDao.selectAssetSetNameList(notDelete);
     }
 
 }

@@ -32,7 +32,6 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
     @Autowired
     private MongoTemplate mongoTemplate;
 
-    public static String collectionName = null;
 
     /**
      * 插入 动态 Object （新增）
@@ -43,7 +42,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @throws IllegalAccessException
      */
     @Override
-    public <T> boolean insert(Object objectBean, String objKey) throws IllegalAccessException {
+    public <T> boolean insert(String collectionName, Object objectBean, String objKey) throws IllegalAccessException {
 
         // create codec registry for POJOs
         CodecRegistry pojoCodecRegistry = fromRegistries(
@@ -95,29 +94,43 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
         return updateResult.toString();
     }
 
+//    /**
+//     *  查看当前数据库 某类型 数据表/ collection
+//     *  不包括统计表： 例如 asset_statistics
+//     * @param type 类型 assert：资产
+//     * @return todo
+//     */
+//    @Override
+//    public Set selectContainCollection(String type) {
+//        Set<String> CollectionList = mongoTemplate.getCollectionNames();
+//        Set<String> result = new HashSet<>();
+//        for (String name : CollectionList) {
+//            if (name.startsWith(type)) {
+//                result.add(name.split("_")[1]);
+//            }
+//        }
+//        result.remove("statistics");
+//        return result;
+//    }
+
+
     /**
-     *  查看当前数据库 某类型 数据表/ collection
-     *  不包括统计表： 例如 asset_statistics
-     * @param type 类型 assert：资产
-     * @return
+     * 查看当前所有资产数据集合 list
+     * @param notDelete 是否暂时删除; false: 或 没有 ”isDelete属性“
+     * @return 名称 List
      */
     @Override
-    public Set selectContainCollection(String type) {
-        Set<String> CollectionList = mongoTemplate.getCollectionNames();
-        Set<String> result = new HashSet<>();
-        for (String name : CollectionList) {
-            if (name.startsWith(type)) {
-                result.add(name.split("_")[1]);
-            }
-        }
-        result.remove("statistics");
-        return result;
-    }
-
-    @Override
-    public List<String> selectAssetSetNameList() {
+    public List<String> selectAssetSetNameList(boolean notDelete) {
         MongoCollection<Document> collection  = mongoTemplate.getCollection("asset_statistics");
+
+        Document filterD = new Document();
+        if (notDelete) {
+            filterD.append("isDelete", new Document("$ne", true));
+        }
         FindIterable<Document> documents = collection.find()
+                .filter(
+                        filterD
+                )
                 .projection(
                         new Document("assetSetName", 1).append("_id", 0)
                 );
@@ -175,7 +188,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
     }
 
     /**
-     * 根据表名查询所有
+     * 根据表名查询所有 数据
      * @param collectionName
      * @return
      */

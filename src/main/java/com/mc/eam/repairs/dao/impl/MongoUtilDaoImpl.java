@@ -26,7 +26,7 @@ import java.util.*;
  * @Date： 2021/2/19 13:18
  * @description: 通用Dao
  */
-@Component
+@Component("mongoUtilDaoImpl")
 public class MongoUtilDaoImpl implements MongoUtilDao {
 
     @Autowired
@@ -112,26 +112,25 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
 
     /**
      *
-     * @param keyName  返回的 key 对应 kv json
-     * @param queryKey
-     * @param queryValue
-     * @param collectionName
+     * @param keyName  返回的 对应 key
+     * @param filters 查询条件
+     * @param collectionName 集合名称
      * @return
      */
     @Override
-    public JSONObject findValue(String keyName, String queryKey, String queryValue,String collectionName) {
+    public JSONObject findValue(String keyName, Map filters ,String collectionName) {
 
         MongoCollection<Document> collection  = mongoTemplate.getCollection(collectionName);
         FindIterable<Document> documents;
-        if (queryKey.equals("_id")) {
+        if (filters.containsKey("_id")) {
             documents = collection.find()
-                    .filter(new Document("_id", new ObjectId(queryValue)))
+                    .filter(new Document("_id", new ObjectId(filters.get("_id").toString())))
                     .projection(
                             new Document(keyName, 1).append("_id", 0)
                     );
         } else {
             documents = collection.find()
-                    .filter(new Document(queryKey, queryValue))
+                    .filter(new Document(filters))
                     .projection(
                             new Document(keyName, 1).append("_id", 0)
                     );
@@ -157,7 +156,27 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
     @Override
     public long updateDocumentValue(Map map, String id, String collectionName) {
         MongoCollection collection  = mongoTemplate.getCollection(collectionName);
-        return collection.updateOne(new Document(map), new Document("_id", new ObjectId(id))).getModifiedCount();
+        return collection.updateOne(
+                new Document(map),
+                new Document("_id", new ObjectId(id))
+        ).getModifiedCount();
+    }
+
+    /**
+     * 某 document 更新 value
+     * @param arrayKey key
+     * @param list 追加数据
+     * @param filters
+     * @param collectionName
+     * @return
+     */
+    @Override
+    public long updateDocumentValue(String arrayKey, List list, Map filters, String collectionName) {
+        MongoCollection collection  = mongoTemplate.getCollection(collectionName);
+        return collection.updateMany(
+                new Document(filters),
+                new Document("$push", new Document(arrayKey, new Document("$each", list)))
+        ).getModifiedCount();
     }
 
     /**

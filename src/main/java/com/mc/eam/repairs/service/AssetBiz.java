@@ -47,7 +47,7 @@ public interface AssetBiz {
      * @param assetName 资产数据表名
      * @return
      */
-    boolean containAssetName(String assetName);
+    boolean containAssetSetName(String assetName);
 
     /**
      * 维修资产 增加属性数据 data-kv
@@ -65,6 +65,10 @@ public interface AssetBiz {
     // 删除某资产集合
     ServerResponse deleteAssetSet(String assetSetName, boolean isForever);
 
-    // 查询当前已有的资产集合名称
-    List<String> queryAssetSetList(String assetSetName, boolean containIsDelete);
+    /**
+     * 查询当前已有的资产集合名称
+     * @param isDelete 是否删除，一般为 true
+     * @return 资产名称集合
+     */
+    List<String> queryAssetSetList(boolean isDelete);
 }

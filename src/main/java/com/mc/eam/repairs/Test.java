@@ -1,6 +1,7 @@
 package com.mc.eam.repairs;
 
 import com.alibaba.fastjson.JSONObject;
+import com.mongodb.client.*;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -22,50 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Test {
 
     public static void main(String[] args) {
-
-        String kk = "{ \"_id\" : { \"$oid\" : \"60370841c56b845f2181dc58\" }, \"date\" : { \"$date\" : 1614238455199 }, \"s1\" : 1, \"s2\" : {\n" +
-                "\n" +
-                "\"test\": \"asdasd\"} }\n" +
-                "\n";
-        System.out.println(Document.parse(kk).get("_id"));
-//        String a = "601cf3004703714b00d00875";
-//        ObjectId objectId = new ObjectId(a);
-//        String k = "{\"forecast\":[{\"id\": 4},{\"id\": 5},{\"id\": 6}]}";
-//
-//        Document document = Document.parse(k);
-//        ArrayList<Document> arrayList = (ArrayList<Document>) document.get("forecast");
-//        System.out.println(arrayList.toString());
-//        System.out.println(arrayList.size());
-//        System.out.println(arrayList.get(1));
-
-//        Map<String, Object> map = null;
-////        map.put("a", "a");
-////        map.put("b.c", "123");
-////        JSONObject json = new JSONObject(map);
-//        System.out.println(Document.parse(JSONObject.toJSONString(map)));
-//        System.out.println(JSONObject.toJSONString(map));
-
-//        System.out.println(json.toJSONString());
-
-//
-//        for (Document d: arrayLists) {
-//            String finalValue = keyArray[keyArray.length-1];
-//            if (d.containsKey(finalValue)) {
-//                valueList.add(d.getString(finalValue));
-//            }
-//         }
-//        System.out.println(valueList.toString());
-
-//        LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-//
-//        System.out.println(ObjectId.isValid(a));
-//        System.out.println(objectId.toString());
-//        System.out.println(localDateTime);
-//
-//        a = ObjectId.createFromLegacyFormat(localDateTime.getSecond(),
-//                objectId.getMachineIdentifier(),
-//                3).toString();
-//        System.out.println(a);
+        System.out.println("collectionName".substring(4));
     }
 
     @org.junit.Test
@@ -158,5 +116,25 @@ public class Test {
             in.close();
         }
     }
+
+    @org.junit.Test
+    public void mongoTest()  {
+
+        MongoClient mongoClient = MongoClients.create();
+        MongoDatabase database = mongoClient.getDatabase("test");
+        MongoCollection collection = database.getCollection("asset_statistics");
+
+        String[] strings = {"q","754"};
+//        Arrays.asList("Bakery", "Coffee", "Pastries")
+//        Document filter = new Document("type", "step.plugins.functions.types.GeneralScriptFunction");
+//        Document replacement = new Document("$set", new Document("type", "step.plugins.java.GeneralScriptFunction"));
+
+        System.out.println(collection.updateMany(
+                new Document("_id", new ObjectId("60418d337e6703294ab27b31")),
+                new Document("$addToSet", new Document("dataDictionary", new Document("$each", Arrays.asList(strings))))
+        ));
+    }
+
+
 
 }

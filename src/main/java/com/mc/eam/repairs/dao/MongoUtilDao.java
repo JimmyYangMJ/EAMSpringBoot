@@ -35,7 +35,7 @@ public interface MongoUtilDao {
      */
     List<String> findNameList(String collectionName, String keyName);
 
-    JSONObject findValue(String keyName,  String queryKey, String queryValue, String collectionName);
+    JSONObject findValue(String keyName, Map filters, String collectionName);
 
     /**
      * 更新 数据库 中某 数据表项 信息
@@ -45,6 +45,17 @@ public interface MongoUtilDao {
      * @return count of changes
      */
     long updateDocumentValue(Map updateMap, String id, String tableName);
+
+
+    /**
+     * 某 tableName 中 某条数据（filters），某属性（key） 追加数据 （list）
+     * @param arrayKey key
+     * @param list 追加数据
+     * @param filters
+     * @param tableName 表
+     * @return
+     */
+    long updateDocumentValue(String arrayKey, List list, Map filters, String tableName);
 
     /**
      * 删除 表
