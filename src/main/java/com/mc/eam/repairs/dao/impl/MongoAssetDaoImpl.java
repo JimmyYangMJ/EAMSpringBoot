@@ -72,7 +72,7 @@ public class MongoAssetDaoImpl implements MongoAssetDao {
      * @param assetId  资产 id, 如果为 Null 则  插入所有
      * @param collectionName  集合名称（数据表）
      * @param jsonKey kv,其中 v 为 json ，要插入的 数据参数
-     * @return
+     * @return updateResult
      */
     @Override
     public String updateAssetData(Map map, String assetId, String collectionName, String jsonKey) {

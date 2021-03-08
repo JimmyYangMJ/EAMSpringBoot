@@ -31,14 +31,6 @@ public class AssetController {
     @Autowired
     private MongoAssetDao mongoAssetDao;
 
-    @ApiOperation(value = "测试用", notes = "这是测试用的")
-    @GetMapping("test.do")
-    public ServerResponse<Object> test(){
-        HashMap<String, Object> hashMap = new HashMap<>();
-        hashMap.put("_id", "60418d337e6703294ab27b31");
-        return ServerResponse.createBySuccess(mongoUtilDao.findValue("dataDictionary",hashMap,"asset_statistics"));
-    }
-
     /**
      * 上传原始资产数据（创建 新数据库表：asset_，asset_statistics）
      * @param file 上传文件
@@ -68,12 +60,12 @@ public class AssetController {
         }
     }
 
-    // todo 查询某Set资产 字典序列 array
 
     /**
      * 查询当前已有的资产集合名称
-     * @return 没有被删的资产Set List
+     * @return  没有被删的资产Set List
      */
+    @ApiOperation(value = "资产集合名称", notes = "查询当前已有的资产集合名称列表")
     @GetMapping(value = "setNameList.do")
     public ServerResponse<List<String>> queryAssetSetNameList() {
         return ServerResponse.createBySuccess(assetBiz.queryAssetSetList(true));
@@ -83,9 +75,9 @@ public class AssetController {
      * 删除 资产set 数据
      * @param assetSetName 删除的资产名称
      * @param isForever 是否永久删除
-     * @return todo
+     * @return 结果状态
      */
-    @ApiOperation(value = "删除资产集合数据", notes = "***")
+    @ApiOperation(value = "删除资产集合数据", notes = "")
     @DeleteMapping(value = "set.do")
     public ServerResponse deleteAssetSet(String assetSetName, boolean isForever) {
         return assetBiz.deleteAssetSet(assetSetName, isForever);
@@ -106,7 +98,7 @@ public class AssetController {
         System.out.println(dateMap.toString());
         dateMap.remove("assetId");
         dateMap.remove("assetSetName");
-        // todo 更新资产统计表
+
         return assetBiz.insertAssetData(dateMap, assetId,  assetSetName);
     }
 

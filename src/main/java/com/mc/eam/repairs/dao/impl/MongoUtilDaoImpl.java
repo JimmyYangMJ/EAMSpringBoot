@@ -166,16 +166,16 @@ public class MongoUtilDaoImpl implements MongoUtilDao {
      * 某 document 更新 value
      * @param arrayKey key
      * @param list 追加数据
-     * @param filters
-     * @param collectionName
-     * @return
+     * @param filters 查询条件
+     * @param collectionName 集合名称
+     * @return 更改的条数
      */
     @Override
     public long updateDocumentValue(String arrayKey, List list, Map filters, String collectionName) {
         MongoCollection collection  = mongoTemplate.getCollection(collectionName);
         return collection.updateMany(
                 new Document(filters),
-                new Document("$push", new Document(arrayKey, new Document("$each", list)))
+                new Document("$addToSet", new Document(arrayKey, new Document("$each", list)))
         ).getModifiedCount();
     }
 

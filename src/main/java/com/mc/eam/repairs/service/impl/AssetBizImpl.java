@@ -153,18 +153,33 @@ public class AssetBizImpl implements AssetBiz {
     }
 
     @Override
-    public String insertAssetData(Map httpDateMap, String assertId, String assertSetName) {
+    public String insertAssetData(Map httpDateMap, String assertId, String assetSetName) {
+        /**
+         * httpDateMap key 所对应的 value 为 array 类型，需要转换
+         * dataMap 默认 kv 为 1:1
+         */
         Map<String, String> dataMap = new LinkedHashMap<>();
         Iterator<Map.Entry<String, String[]>> iter = httpDateMap.entrySet().iterator();
+        ArrayList<String> dataDictionary = new ArrayList<>(httpDateMap.size());
         while(iter.hasNext()) {
             Map.Entry<String, String[]> entry = iter.next();
             // 获取key
             String key = entry.getKey();
+            dataDictionary.add(key);
             // 获取value
             String value = entry.getValue()[0];
             dataMap.put(key, value);
         }
-        return  mongoAssetDao.updateAssetData(dataMap, assertId, "asset_" + assertSetName, "data");
+
+        // update dataDictionary in "asset_statistics"
+        HashMap<String, Object> filter = new HashMap<>();
+        filter.put("assetSetName", assetSetName);
+        mongoUtilDao.updateDocumentValue("dataDictionary",dataDictionary,filter , "asset_statistics");
+
+        //  Update data on an asset in "asset_[ASSET_NAME]"
+        return mongoAssetDao.updateAssetData(dataMap, assertId, "asset_" + assetSetName, "data");
+
+
     }
 
 
@@ -234,11 +249,10 @@ public class AssetBizImpl implements AssetBiz {
     /**
      * 查询资产set数据名 List
      * @param notDelete 是否删除，一般为 true
-     * @return
+     * @return 资产集合名称 列表
      */
     @Override
     public List<String> queryAssetSetList(boolean notDelete) {
-
         return  mongoAssetDao.selectAssetSetNameList(notDelete);
     }
 
