@@ -77,7 +77,7 @@ public class AssetController {
      * @param isForever 是否永久删除
      * @return 结果状态
      */
-    @ApiOperation(value = "删除资产集合数据", notes = "")
+    @ApiOperation(value = "删除资产集合Set数据", notes = "")
     @DeleteMapping(value = "set.do")
     public ServerResponse deleteAssetSet(String assetSetName, boolean isForever) {
         return assetBiz.deleteAssetSet(assetSetName, isForever);
@@ -90,16 +90,17 @@ public class AssetController {
      * @param request
      * @return todo 格式化
      */
+    @ApiOperation(value = "维修资产 增加属性数据", notes = "data-kv")
     @PutMapping(value = "addAssetInfo.do")
-    public String addAssetInfo(String assetId, String assetSetName,
+    public ServerResponse<String> addAssetInfo(String assetId, String assetSetName,
                                  HttpServletRequest request) {
         System.out.println(assetId + assetSetName);
         Map<String,String[]> dateMap = new HashMap<>(request.getParameterMap());
         System.out.println(dateMap.toString());
         dateMap.remove("assetId");
         dateMap.remove("assetSetName");
+        return ServerResponse.createBySuccessMessage(assetBiz.insertAssetData(dateMap, assetId,  assetSetName));
 
-        return assetBiz.insertAssetData(dateMap, assetId,  assetSetName);
     }
 
     /**
@@ -107,6 +108,7 @@ public class AssetController {
      * @param collectionName 表名 eg:asset_647台阿里索电维修test
      * @return todo test
      */
+    @ApiOperation(value = "查询某表所有数据", notes = "")
     @GetMapping(value = "query.do")
     public String query(String collectionName) {
         return mongoAssetDao.queryAll(collectionName);
@@ -119,6 +121,7 @@ public class AssetController {
      * @param page 某页
      * @return
      */
+    @ApiOperation(value = "根据表名 分页查询", notes = "")
     @GetMapping(value = "queryPerPages.do")
     public ServerResponse<JSONObject> queryPerPages(String collectionName, Integer pageSize, Integer page) {
         return assetBiz.queryAssetPerPages(collectionName, pageSize,  page,  null);

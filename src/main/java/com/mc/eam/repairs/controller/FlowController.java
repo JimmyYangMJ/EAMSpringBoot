@@ -55,12 +55,11 @@ public class FlowController {
      * @return
      */
     @PutMapping(value = "assetJson.do")
-    public String insertAssetFlow(@RequestBody JSONObject flowForm) {
+    public ServerResponse<String> insertAssetFlow(@RequestBody JSONObject flowForm) {
         // todo 校验 name 是否重复，name 重复-type 是否重复
         JSONObject jsonObject =  mongoTemplate.insert(flowForm, "flow");
-        System.out.println("***" + jsonObject.getString("_id"));
-        System.out.println("***" + ConvertOperators.ToObjectId.toObjectId(jsonObject.getString("_id")));
-        return jsonObject.getString("name");
+        return  ServerResponse.createBySuccess("success",jsonObject.getString("_id"));
+
     }
 
 
